@@ -1,0 +1,3 @@
+#ignore the .pro.user file
+Hatching/Hatching.pro.user
+*.o
