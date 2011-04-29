@@ -32,8 +32,11 @@
 
 
 #include <GL/glext.h>
-#include <testShot.h>
 #include <QFileDialog>
+
+#include <testShot.h>
+#include <MPSandbox.h>
+
 
 using std::cout;
 using std::endl;
@@ -86,7 +89,8 @@ DrawEngine::DrawEngine(const QGLContext *context,int w,int h, GLWidget* widget) 
     frameNumber = 0;
     m_widget = widget;
 
-    m_shots->append(  new testShot(this, &shader_programs_, &textures_, &models_));
+    //m_shots->append(  new testShot(this, &shader_programs_, &textures_, &models_));
+    m_shots->append(  new MPSandbox(this, &shader_programs_, &textures_, &models_));
 
     m_shots->at(m_curShot)->begin();
     /****************************************/

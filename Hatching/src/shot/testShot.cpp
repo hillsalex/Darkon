@@ -18,17 +18,7 @@ testShot::~testShot()
 //(gl state)
 void testShot::begin()
 {
-glShadeModel(GL_SMOOTH);
-glClearColor(0.8f,0.8f,0.8f,0.0f);
-glEnable(GL_LIGHTING);
-//Make some lights
-glEnable(GL_LIGHT0);
-float lightpos[4];
-lightpos[0]=0.f;
-lightpos[1]=2.f;
-lightpos[2]=1.f;
-lightpos[3]=0.f;
-glLightfv(GL_LIGHT0,GL_POSITION,lightpos);
+
 }
 
 //called every frame before draw.
@@ -47,7 +37,6 @@ extern "C"{
 }
 void testShot::draw()
 {
-
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glMatrixMode(GL_MODELVIEW);
