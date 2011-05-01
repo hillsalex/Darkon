@@ -6,14 +6,6 @@
 class TAMstroke;
 
 
-struct Stroke
-{
-    float x0,y0;
-    float length;
-    float x1,y1;
-    float angle; //angle CCW from positive x in degrees
-    Stroke(){}
-};
 
 class MPSandbox : public Shot
 {
@@ -32,10 +24,11 @@ public:
     //draw!
     void draw();
 
-    float* brushKernel(int radius);
-    void drawStroke(uchar* data, int width, float* kern, int strokerad, Stroke* stroke);
-    float avgVal(uchar* data, int width);
-    uchar** genTAM(int sizes,int tones,int maxwidth);
+    //float* brushKernel(int radius);
+    //void drawStroke(uchar* data, int width, float* kern, int strokerad, Stroke* stroke);
+    //float avgVal(uchar* data, int width);
+    //uchar** genTAM(int sizes,int tones,int maxwidth);
+    //void saveTAM(QString path, uchar** TAM, int tones, int sizes, int maxw);
 };
 
 
