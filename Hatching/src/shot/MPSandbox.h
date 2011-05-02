@@ -2,6 +2,7 @@
 #define MPSANDBOX_H
 
 #include <shot.h>
+#include "Sphere.h"
 #include <math/CS123Algebra.h>
 class TAMstroke;
 
@@ -29,6 +30,7 @@ public:
     //float avgVal(uchar* data, int width);
     //uchar** genTAM(int sizes,int tones,int maxwidth);
     //void saveTAM(QString path, uchar** TAM, int tones, int sizes, int maxw);
+    Sphere* sph;
 };
 
 

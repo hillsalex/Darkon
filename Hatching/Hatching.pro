@@ -21,6 +21,9 @@ SOURCES += main.cpp\
         src/math/CS123Matrix.cpp\
         src/math/CS123Matrix.inl\
         src/math/CS123Vector.inl\
+    src/shot/MPSandbox.cpp \
+    src/shot/tamgenerator.cpp \
+    Sphere.cpp
 
 
 
@@ -37,7 +40,10 @@ HEADERS  += mainwindow.h\
         src/math/CS123Matrix.h \
         src/math/CS123Algebra.h \
         src/lib/CS123Common.h\
-        glext.h
+        glext.h \
+    src/shot/MPSandbox.h \
+    src/shot/tamgenerator.h \
+    Sphere.h
 
 FORMS += mainwindow.ui
 INCLUDEPATH += src src/shot src/lib src/glm

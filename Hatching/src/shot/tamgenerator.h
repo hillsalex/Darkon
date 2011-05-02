@@ -1,6 +1,7 @@
 #ifndef TAMGENERATOR_H
 #define TAMGENERATOR_H
 #include <QString>
+#include <QImage>
 struct Stroke
 {
     float x0,y0;
@@ -19,6 +20,7 @@ public:
     void drawStroke(uchar* data, int width, float* kern, int strokerad, Stroke* stroke);
     float avgVal(uchar* data, int width);
     uchar** genTAM(int sizes,int tones,int maxwidth);
+    QImage** ldImgTAM(QString path, int tones, int sizes);
     void saveTAM(QString path, uchar** TAM, int tones, int sizes, int maxw);
 };
 

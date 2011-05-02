@@ -30,6 +30,22 @@ void TAMGenerator::saveTAM(QString path, uchar** TAM, int tones, int sizes, int 
     }cout<<"done."<<endl;
 }
 
+QImage** TAMGenerator::ldImgTAM(QString path, int tones, int sizes)
+{
+    QImage** toreturn = new QImage*[tones*sizes];
+    for(int t=0;t<tones;t++)
+    {
+        for(int s=0;s<sizes;s++)
+        {
+            stringstream ss;
+            ss<<path.toStdString()<<"TAM_"<<t<<"_"<<s;
+            QImage* curtam = new QImage(QString::fromStdString(ss.str()));
+            toreturn[s*tones+t] = curtam;
+        }
+    }
+    return toreturn;
+}
+
 //stroke: x0,y0,length,
 void TAMGenerator::drawStroke(uchar* data, int width, float* kern, int rad, Stroke* stroke)
 {
@@ -148,7 +164,6 @@ for(int r=0;r<tones;r++)
                     s->y0 = (rand()%1000)/1000.0;
 
                     vector<Stroke*>* curStrLst = strokeLists[slev*tones+tlev];
-                    if(curStrLst->size()==curStrLst->capacity()){cout<<"FUCK?"<<endl;}
                     cout<<"done"<<endl;
                     cout<<"stroke list at (" << tlev <<","<< slev <<") "<< curStrLst <<" size: "<<curStrLst->size()<<endl;
                     cout<<"["; for(int bl=0;bl<curStrLst->size();bl++){cout<<(curStrLst->at(bl))->x0<<",";} cout<<"]"<<endl;
