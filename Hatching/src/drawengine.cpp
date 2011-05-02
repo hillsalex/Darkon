@@ -29,14 +29,15 @@
 #include <iostream>
 #include <QFile>
 #include <QGLFramebufferObject>
-
-
 #include <GL/glext.h>
 #include <QFileDialog>
 
+//***********************************
+//INCLUDE SHOTS HERE AS YOU MAKE THEM
 #include <testShot.h>
 #include <MPSandbox.h>
-
+#include <SphereShot.h>
+//***********************************
 
 using std::cout;
 using std::endl;
@@ -90,7 +91,8 @@ DrawEngine::DrawEngine(const QGLContext *context,int w,int h, GLWidget* widget) 
     m_widget = widget;
 
     //m_shots->append(  new testShot(this, &shader_programs_, &textures_, &models_));
-    m_shots->append(  new MPSandbox(this, &shader_programs_, &textures_, &models_));
+    m_shots->append(  new SphereShot(this, &shader_programs_, &textures_, &models_));
+    //m_shots->append(  new MPSandbox(this, &shader_programs_, &textures_, &models_));
 
     m_shots->at(m_curShot)->begin();
     /****************************************/

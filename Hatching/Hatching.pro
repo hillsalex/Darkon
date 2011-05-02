@@ -23,7 +23,8 @@ SOURCES += main.cpp\
         src/math/CS123Vector.inl\
     src/shot/MPSandbox.cpp \
     src/shot/tamgenerator.cpp \
-    Sphere.cpp
+    Sphere.cpp \
+    src/shot/SphereShot.cpp
 
 
 
@@ -43,7 +44,8 @@ HEADERS  += mainwindow.h\
         glext.h \
     src/shot/MPSandbox.h \
     src/shot/tamgenerator.h \
-    Sphere.h
+    Sphere.h \
+    src/shot/SphereShot.h
 
 FORMS += mainwindow.ui
 INCLUDEPATH += src src/shot src/lib src/glm
