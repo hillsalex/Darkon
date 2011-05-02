@@ -12,6 +12,9 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp\
+        src/LinearSolver.cpp\
+src/SparseMatrix.cpp\
+src/SparseMatrix.inl\
         src/drawengine.cpp\
         src/glwidget.cpp\
         src/shot/shot.cpp\
@@ -31,6 +34,9 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h\
         src/drawengine.h\
+        src/LinearSolver.h\
+src/SparseMatrix.h\
+src/matrix.h\
         src/glwidget.h\
         src/shot/shot.h\
         src/shot/testShot.h\
@@ -48,5 +54,10 @@ HEADERS  += mainwindow.h\
     src/shot/SphereShot.h
 
 FORMS += mainwindow.ui
-INCLUDEPATH += src src/shot src/lib src/glm
+INCLUDEPATH += src src/shot src/lib src/glm \
+            /course/cs224/lib/umfpack/include
 DEPENDPATH += src src/shot src/lib src/glm
+LIBS += -L/course/cs032/lib/OpenCV/release/lib \
+        -lcv -lcxcore -lcvaux -lhighgui \
+        -L/course/cs224/lib/umfpack \
+        -lumfpack -lamd -lblas -lcerbla \

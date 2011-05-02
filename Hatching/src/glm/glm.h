@@ -78,6 +78,8 @@ typedef struct _GLMmodel {
     GLuint       numtriangles;    /* number of triangles in model */
     GLMtriangle* triangles;       /* array of triangles */
 
+    GLfloat * curvatures;   //Vertex curvatures
+
     GLuint       nummaterials;    /* number of materials in model */
     GLMmaterial* materials;       /* array of materials */
 

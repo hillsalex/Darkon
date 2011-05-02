@@ -79,6 +79,7 @@ DrawEngine::DrawEngine(const QGLContext *context,int w,int h, GLWidget* widget) 
     load_shaders();
     load_models();
     load_textures();
+    create_curvatures();
     create_fbos(w,h);
 
 
@@ -163,6 +164,95 @@ void DrawEngine::load_textures() {
     //*********************************************************************
 
 
+}
+
+
+void DrawEngine::create_curvatures()
+{
+    foreach (Model m, models_)
+    {
+        GLMmodel* model = m.model;
+        QHash<GLint,QSet<GLint>* > adjacencyMatrix;
+        QHash<GLint, GLint> vertexNormalComps;
+        for(int i=0;i<model->numtriangles;i++) //Create adjacency matrix and vertex-normal mapping
+
+        {
+            GLMtriangle tri = model->triangles[i];
+            GLint v0 = tri.vindices[0];
+            GLint v1 = tri.vindices[1];
+            GLint v2 = tri.vindices[2];
+
+            if (adjacencyMatrix.contains(v0))
+            {
+                adjacencyMatrix.value(v0)->insert(v1);
+                adjacencyMatrix.value(v0)->insert(v2);
+            }
+            else
+            {
+                QSet<GLint>* set = new QSet<GLint>;
+                set->insert(v1);
+                set->insert(v2);
+                adjacencyMatrix.insert(v0,set);
+            }
+
+            if (adjacencyMatrix.contains(v1))
+            {
+                adjacencyMatrix.value(v1)->insert(v0);
+                adjacencyMatrix.value(v1)->insert(v2);
+            }
+            else
+            {
+                QSet<GLint>* set = new QSet<GLint>;
+                set->insert(v0);
+                set->insert(v2);
+                adjacencyMatrix.insert(v1,set);
+            }
+
+            if (adjacencyMatrix.contains(v2))
+            {
+                adjacencyMatrix.value(v2)->insert(v1);
+                adjacencyMatrix.value(v2)->insert(v0);
+            }
+            else
+            {
+                QSet<GLint>* set = new QSet<GLint>;
+                set->insert(v1);
+                set->insert(v0);
+                adjacencyMatrix.insert(v2,set);
+            }
+            if (!vertexNormalComps.contains(v0)) vertexNormalComps.insert(v0,tri.nindices[0]);
+            if (!vertexNormalComps.contains(v1)) vertexNormalComps.insert(v1,tri.nindices[1]);
+            if (!vertexNormalComps.contains(v2)) vertexNormalComps.insert(v2,tri.nindices[2]);
+        }
+        QList<GLint> keys = adjacencyMatrix.keys();
+        for (int i=0;i<keys.size();i++)
+        {
+            GLint vertexIndex = keys[i]; //Index of current vertex
+            GLint normalIndex = vertexNormalComps.value(vertexIndex); //Normal index of current vertex
+            vec3<float> normal; //Normal of current index
+            vec3<float> vert; //Position of current vertex
+            normal.x = model->normals[normalIndex*3];
+            normal.y = model->normals[normalIndex*3+1];
+            normal.z = model->normals[normalIndex*3+2];
+            vert.x = model->vertices[vertexIndex*3];
+            vert.y = model->vertices[vertexIndex*3+1];
+            vert.z = model->vertices[vertexIndex*3+2];
+
+            QList<GLint> adjacentVertices = adjacencyMatrix.value(vertexIndex)->values(); //Adjacent vertices
+            GLint v0index = adjacentVertices[0]; //first adjacent vertex, for calculating basis
+            vec3<float> v0;
+            //v0.x = model->vertices[v0*3];
+            //v0.y = model->vertices[v0*3+1];
+            //v0.z = model->vertices[v0*3+2];
+            //Translate v0 to vert as origin, project to uv plane
+            vec3<float> u = v0-vert;
+            u.normalize();
+            u = u - normal * u.dot(normal);
+            //v = normal.cross(u);
+
+
+        }
+    }
 }
 /**
   @paragraph Creates the intial framebuffers for drawing.  Called by the ctor once
