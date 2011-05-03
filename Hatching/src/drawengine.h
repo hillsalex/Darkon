@@ -79,6 +79,7 @@ protected:
     void load_textures();
     void load_shaders();
     void create_curvatures();
+    void orientTexture(GLMmodel* model, QVector<int> patch);
     GLuint load_cube_map(QList<QFile *> files);
     GLuint load_texture(QString name);
     void create_fbos(int w, int h);

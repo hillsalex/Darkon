@@ -32,12 +32,16 @@
 #include <GL/glext.h>
 #include <QFileDialog>
 
+#include "src/common.h"
+#include "src/SparseMatrix.h"
+
 //***********************************
 //INCLUDE SHOTS HERE AS YOU MAKE THEM
 #include <testShot.h>
 #include <MPSandbox.h>
 #include <SphereShot.h>
 //***********************************
+#define T(x) (model->triangles[(x)])
 
 using std::cout;
 using std::endl;
@@ -254,6 +258,121 @@ void DrawEngine::create_curvatures()
         }
     }
 }
+
+void DrawEngine::orientTexture(GLMmodel* model, QVector<int> patch) {
+    //debugging: see if you can get this to be just the number of vertices in the vector -> hashmap, maybe.
+    SparseMatrix H00 = SparseMatrix(model->numtriangles*6, model->numtriangles*6); //*6 for 3 vert/tri, xy/vert
+
+    int idx_ax, idx_ay, idx_bx, idx_by, idx_cx, idx_cy;
+    double alpha, beta;
+
+    //entering in values for H00 for all vertices.
+    for (int tri = 0; tri < patch.size(); tri++) {
+        GLMtriangle ctri = T(patch.at(tri));
+
+        //idx locations in H
+        idx_ax = ctri.vindices[0]*2;
+        idx_ay = ctri.vindices[0]*2+1;
+        idx_bx = ctri.vindices[1]*2;
+        idx_by = ctri.vindices[1]*2+1;
+        idx_cx = ctri.vindices[2]*2;
+        idx_cy = ctri.vindices[2]*2+1;
+
+        //CONVERT METHOD TO 3D to get alpha and beta. oops. o.O
+        //maybe assume coplanar, and just do distance from barycenter?
+        alpha = 1.f;
+        beta  = 1.f;
+
+        //ax ax = alpha^2
+        H00.addValue(idx_ax, idx_ax, H00.getValue(idx_ax, idx_ax) + alpha*alpha);
+        //ax bx = alpha*beta
+        H00.addValue(idx_ax, idx_bx, H00.getValue(idx_ax, idx_bx) + alpha*beta);
+        //ax cx = - alpha^2 - alpha*beta
+        H00.addValue(idx_ax, idx_cx, H00.getValue(idx_ax, idx_cx) - alpha*alpha - alpha*beta);
+        //ay ay = alpha^2
+        H00.addValue(idx_ay, idx_ay, H00.getValue(idx_ay, idx_ay) + alpha*alpha);
+        //ay by = alpha*beta
+        H00.addValue(idx_ay, idx_by, H00.getValue(idx_ay, idx_by) + alpha*beta);
+        //ay cy = - alpha^2 - alpha*beta
+        H00.addValue(idx_ay, idx_cy, H00.getValue(idx_ay, idx_cy) - alpha*alpha - alpha*beta);
+        //bx ax = alpha*beta
+        H00.addValue(idx_bx, idx_ax, H00.getValue(idx_bx, idx_ax) + alpha*beta);
+        //bx bx = beta^2
+        H00.addValue(idx_bx, idx_bx, H00.getValue(idx_bx, idx_bx) + alpha*beta);
+        //bx cx = -alpha*beta - beta^2
+        H00.addValue(idx_bx, idx_cx, H00.getValue(idx_bx, idx_cx) - beta*beta - alpha*beta);
+        //by ay = alpha*beta
+        H00.addValue(idx_by, idx_ay, H00.getValue(idx_by, idx_ay) + alpha*beta);
+        //by by = beta^2
+        H00.addValue(idx_by, idx_by, H00.getValue(idx_by, idx_by) + alpha*beta);
+        //by cy = -alpha*beta - beta^2
+        H00.addValue(idx_by, idx_cy, H00.getValue(idx_by, idx_cy) - beta*beta - alpha*beta);
+        //cx ax = - alpha^2 - alpha*beta
+        H00.addValue(idx_cx, idx_ax, H00.getValue(idx_cx, idx_ax) - alpha*alpha - alpha*beta);
+        //cx bx = -alpha*beta - beta^2
+        H00.addValue(idx_cx, idx_bx, H00.getValue(idx_cx, idx_bx) - beta*beta - alpha*beta);
+        //cx cx = (alpha+beta)^2
+        H00.addValue(idx_cx, idx_cx, H00.getValue(idx_cx, idx_cx) + (alpha+beta)*(alpha+beta));
+        //cy ay = - alpha^2 - alpha*beta
+        H00.addValue(idx_cy, idx_ay, H00.getValue(idx_cy, idx_ay) - alpha*alpha - alpha*beta);
+        //cy by = -alpha*beta - beta^2
+        H00.addValue(idx_cy, idx_by, H00.getValue(idx_cy, idx_by) - beta*beta - alpha*beta);
+        //cy cy = (alpha+beta)^2
+        H00.addValue(idx_cy, idx_cy, H00.getValue(idx_cy, idx_cy) + (alpha+beta)*(alpha+beta));
+    }
+
+    //making H01, H10
+    SparseMatrix H10 = SparseMatrix(2,model->numtriangles*6);
+    SparseMatrix H01 = SparseMatrix(model->numtriangles*6,2);
+
+    GLMtriangle seed = T(patch.at(0));
+
+    //adding seed barycenter = 1/3(phi(A) + phi(B) + phi(C))
+    H10.addValue(0, seed.vindices[0]*2,   0.166);
+    H10.addValue(1, seed.vindices[0]*2+1, 0.166);
+    H10.addValue(0, seed.vindices[1]*2,   0.166);
+    H10.addValue(1, seed.vindices[1]*2+1, 0.166);
+    H10.addValue(0, seed.vindices[2]*2,   0.166);
+    H10.addValue(1, seed.vindices[2]*2+1, 0.166);
+
+    H01.addValue(seed.vindices[0]*2,   0, 0.166);
+    H01.addValue(seed.vindices[0]*2+1, 1, 0.166);
+    H01.addValue(seed.vindices[1]*2,   0, 0.166);
+    H01.addValue(seed.vindices[1]*2+1, 1, 0.166);
+    H01.addValue(seed.vindices[2]*2,   0, 0.166);
+    H01.addValue(seed.vindices[2]*2+1, 1, 0.166);
+
+    //Hprime.
+    SparseMatrix *Hprime = new SparseMatrix(H00 + H00.getTranspose());
+    //D
+    SparseMatrix *D = new SparseMatrix(H01 + H10.getTranspose());
+}
+
+double2 relativeCoord(double2 A, double2 B, double2 C) {
+    double2 eCA = A-C;
+    double2 eBA = A-B;
+    double2 eBAs = double2(-eBA.y, eBA.x);
+    double d = eBA.x*eBA.x+eBA.y*eBA.y;
+    double x = (eCA.x*eBA.x+eCA.y*eBA.y) / d;
+    double y = (eCA.x*eBAs.x+eCA.y*eBAs.y) / d;
+
+    return double2(x,y);
+}
+
+/* baryCoord: Barycentric Coordinates
+ * To express phi(T) as a linear combination of points phi(A), phi(B), phi(C),
+ * phi(T) = alpha * phi(A) + beta * phi(B) + gamma * phi(C)
+ * alpha + beta + gamma = 0;
+ * debugging: make sure that this equation works for alpha + beta + gamma = 1
+ */
+double2 baryCoord(double2 A, double2 B, double2 C, double2 T) {
+    double alpha = ((B.y-C.y)*(T.x-C.x)+(C.x-B.x)*(T.y-C.y))/((B.y-C.y)*(A.x-C.x)+(C.x-B.x)*(A.y-C.y));
+    double beta  = ((C.y-A.y)*(T.x-C.x)+(A.x-C.x)*(T.y-C.y))/((C.y-A.y)*(B.x-C.x)+(A.x-C.x)*(B.y-C.y));
+
+    return double2(alpha, beta);
+}
+
+
 /**
   @paragraph Creates the intial framebuffers for drawing.  Called by the ctor once
   upon initialization.
