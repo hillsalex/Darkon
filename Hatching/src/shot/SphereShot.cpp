@@ -104,7 +104,7 @@ void SphereShot::draw()
 {
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glEnable(GL_TEXTURE_2D);
-
+    glDisable(GL_TEXTURE_2D);
     float lightpos[4];
     lightpos[0]=1.2f;
     lightpos[1]=-2.f * sin(m_framesElapsed/10.0);
