@@ -31,6 +31,12 @@
 #include <QGLFramebufferObject>
 #include <GL/glext.h>
 #include <QFileDialog>
+#include <QVector>
+
+//including solver things.
+#include "src/common.h"
+#include "src/SparseMatrix.h"
+#include "src/LinearSolver.h"
 
 //***********************************
 //INCLUDE SHOTS HERE AS YOU MAKE THEM
@@ -38,6 +44,7 @@
 #include <MPSandbox.h>
 #include <SphereShot.h>
 //***********************************
+#define T(x) (model->triangles[(x)])
 
 using std::cout;
 using std::endl;
@@ -79,6 +86,7 @@ DrawEngine::DrawEngine(const QGLContext *context,int w,int h, GLWidget* widget) 
     load_shaders();
     load_models();
     load_textures();
+    create_curvatures();
     create_fbos(w,h);
 
 
@@ -164,6 +172,236 @@ void DrawEngine::load_textures() {
 
 
 }
+
+
+void DrawEngine::create_curvatures()
+{
+    foreach (Model m, models_)
+    {
+        GLMmodel* model = m.model;
+        QHash<GLint,QSet<GLint>* > adjacencyMatrix;
+        QHash<GLint, GLint> vertexNormalComps;
+        for(int i=0;i<model->numtriangles;i++) //Create adjacency matrix and vertex-normal mapping
+
+        {
+            GLMtriangle tri = model->triangles[i];
+            GLint v0 = tri.vindices[0];
+            GLint v1 = tri.vindices[1];
+            GLint v2 = tri.vindices[2];
+
+            if (adjacencyMatrix.contains(v0))
+            {
+                adjacencyMatrix.value(v0)->insert(v1);
+                adjacencyMatrix.value(v0)->insert(v2);
+            }
+            else
+            {
+                QSet<GLint>* set = new QSet<GLint>;
+                set->insert(v1);
+                set->insert(v2);
+                adjacencyMatrix.insert(v0,set);
+            }
+
+            if (adjacencyMatrix.contains(v1))
+            {
+                adjacencyMatrix.value(v1)->insert(v0);
+                adjacencyMatrix.value(v1)->insert(v2);
+            }
+            else
+            {
+                QSet<GLint>* set = new QSet<GLint>;
+                set->insert(v0);
+                set->insert(v2);
+                adjacencyMatrix.insert(v1,set);
+            }
+
+            if (adjacencyMatrix.contains(v2))
+            {
+                adjacencyMatrix.value(v2)->insert(v1);
+                adjacencyMatrix.value(v2)->insert(v0);
+            }
+            else
+            {
+                QSet<GLint>* set = new QSet<GLint>;
+                set->insert(v1);
+                set->insert(v0);
+                adjacencyMatrix.insert(v2,set);
+            }
+            if (!vertexNormalComps.contains(v0)) vertexNormalComps.insert(v0,tri.nindices[0]);
+            if (!vertexNormalComps.contains(v1)) vertexNormalComps.insert(v1,tri.nindices[1]);
+            if (!vertexNormalComps.contains(v2)) vertexNormalComps.insert(v2,tri.nindices[2]);
+        }
+        QList<GLint> keys = adjacencyMatrix.keys();
+        for (int i=0;i<keys.size();i++)
+        {
+            GLint vertexIndex = keys[i]; //Index of current vertex
+            GLint normalIndex = vertexNormalComps.value(vertexIndex); //Normal index of current vertex
+            vec3<float> normal; //Normal of current index
+            vec3<float> vert; //Position of current vertex
+            normal.x = model->normals[normalIndex*3];
+            normal.y = model->normals[normalIndex*3+1];
+            normal.z = model->normals[normalIndex*3+2];
+            vert.x = model->vertices[vertexIndex*3];
+            vert.y = model->vertices[vertexIndex*3+1];
+            vert.z = model->vertices[vertexIndex*3+2];
+
+            QList<GLint> adjacentVertices = adjacencyMatrix.value(vertexIndex)->values(); //Adjacent vertices
+            GLint v0index = adjacentVertices[0]; //first adjacent vertex, for calculating basis
+            vec3<float> v0;
+            //v0.x = model->vertices[v0*3];
+            //v0.y = model->vertices[v0*3+1];
+            //v0.z = model->vertices[v0*3+2];
+            //Translate v0 to vert as origin, project to uv plane
+            vec3<float> u = v0-vert;
+            u.normalize();
+            u = u - normal * u.dot(normal);
+            //v = normal.cross(u);
+
+
+        }
+    }
+}
+
+void DrawEngine::orientTexture(GLMmodel* model, QVector<int> patch) {
+    //debugging: see if you can get this to be just the number of vertices in the vector -> hashmap, maybe.
+    SparseMatrix H00 = SparseMatrix(model->numvertices*2, model->numvertices*2);
+
+    int idx_ax, idx_ay, idx_bx, idx_by, idx_cx, idx_cy;
+    double alpha, beta;
+
+    //calculating f0.
+    double f0[model->numvertices*2];
+
+    //entering in values for H00 for all vertices.
+    for (int tri = 0; tri < patch.size(); tri++) {
+        GLMtriangle ctri = T(patch.at(tri));
+
+        //idx locations in H
+        idx_ax = ctri.vindices[0]*2;
+        idx_ay = ctri.vindices[0]*2+1;
+        idx_bx = ctri.vindices[1]*2;
+        idx_by = ctri.vindices[1]*2+1;
+        idx_cx = ctri.vindices[2]*2;
+        idx_cy = ctri.vindices[2]*2+1;
+
+        //CONVERT METHOD TO 3D to get alpha and beta. oops. o.O
+        //maybe assume coplanar, and just do distance from barycenter?
+        alpha = 1.f;
+        beta  = 1.f;
+
+        //ax ax = alpha^2
+        H00.addValue(idx_ax, idx_ax, H00.getValue(idx_ax, idx_ax) + alpha*alpha);
+        //ax bx = alpha*beta
+        H00.addValue(idx_ax, idx_bx, H00.getValue(idx_ax, idx_bx) + alpha*beta);
+        //ax cx = - alpha^2 - alpha*beta
+        H00.addValue(idx_ax, idx_cx, H00.getValue(idx_ax, idx_cx) - alpha*alpha - alpha*beta);
+        //ay ay = alpha^2
+        H00.addValue(idx_ay, idx_ay, H00.getValue(idx_ay, idx_ay) + alpha*alpha);
+        //ay by = alpha*beta
+        H00.addValue(idx_ay, idx_by, H00.getValue(idx_ay, idx_by) + alpha*beta);
+        //ay cy = - alpha^2 - alpha*beta
+        H00.addValue(idx_ay, idx_cy, H00.getValue(idx_ay, idx_cy) - alpha*alpha - alpha*beta);
+        //bx ax = alpha*beta
+        H00.addValue(idx_bx, idx_ax, H00.getValue(idx_bx, idx_ax) + alpha*beta);
+        //bx bx = beta^2
+        H00.addValue(idx_bx, idx_bx, H00.getValue(idx_bx, idx_bx) + alpha*beta);
+        //bx cx = -alpha*beta - beta^2
+        H00.addValue(idx_bx, idx_cx, H00.getValue(idx_bx, idx_cx) - beta*beta - alpha*beta);
+        //by ay = alpha*beta
+        H00.addValue(idx_by, idx_ay, H00.getValue(idx_by, idx_ay) + alpha*beta);
+        //by by = beta^2
+        H00.addValue(idx_by, idx_by, H00.getValue(idx_by, idx_by) + alpha*beta);
+        //by cy = -alpha*beta - beta^2
+        H00.addValue(idx_by, idx_cy, H00.getValue(idx_by, idx_cy) - beta*beta - alpha*beta);
+        //cx ax = - alpha^2 - alpha*beta
+        H00.addValue(idx_cx, idx_ax, H00.getValue(idx_cx, idx_ax) - alpha*alpha - alpha*beta);
+        //cx bx = -alpha*beta - beta^2
+        H00.addValue(idx_cx, idx_bx, H00.getValue(idx_cx, idx_bx) - beta*beta - alpha*beta);
+        //cx cx = (alpha+beta)^2
+        H00.addValue(idx_cx, idx_cx, H00.getValue(idx_cx, idx_cx) + (alpha+beta)*(alpha+beta));
+        //cy ay = - alpha^2 - alpha*beta
+        H00.addValue(idx_cy, idx_ay, H00.getValue(idx_cy, idx_ay) - alpha*alpha - alpha*beta);
+        //cy by = -alpha*beta - beta^2
+        H00.addValue(idx_cy, idx_by, H00.getValue(idx_cy, idx_by) - beta*beta - alpha*beta);
+        //cy cy = (alpha+beta)^2
+        H00.addValue(idx_cy, idx_cy, H00.getValue(idx_cy, idx_cy) + (alpha+beta)*(alpha+beta));
+
+        //filling in f0.
+        f0[idx_ax] += -2*alpha; //-2alpha*s_x
+        f0[idx_ay] += -2*alpha; //-2alpha*t_y
+        f0[idx_bx] += -2*beta;  //-2beta*s_x
+        f0[idx_by] += -2*beta;  //-2beta*t_y
+        f0[idx_cx] += -2*alpha-2*beta; //-2*alpha*s_x-2*beta*s_x
+        f0[idx_cy] += -2*alpha-2*beta; //-2*alpha*t_y-2*beta*t_y
+    }
+
+    //making H01, H10
+    SparseMatrix H10 = SparseMatrix(2,model->numvertices*2);
+    SparseMatrix H01 = SparseMatrix(model->numvertices*2,2);
+
+    GLMtriangle seed = T(patch.at(0));
+
+    //adding seed barycenter = 1/3(phi(A) + phi(B) + phi(C))
+    H10.addValue(0, seed.vindices[0]*2,   0.166);
+    H10.addValue(1, seed.vindices[0]*2+1, 0.166);
+    H10.addValue(0, seed.vindices[1]*2,   0.166);
+    H10.addValue(1, seed.vindices[1]*2+1, 0.166);
+    H10.addValue(0, seed.vindices[2]*2,   0.166);
+    H10.addValue(1, seed.vindices[2]*2+1, 0.166);
+
+    H01.addValue(seed.vindices[0]*2,   0, 0.166);
+    H01.addValue(seed.vindices[0]*2+1, 1, 0.166);
+    H01.addValue(seed.vindices[1]*2,   0, 0.166);
+    H01.addValue(seed.vindices[1]*2+1, 1, 0.166);
+    H01.addValue(seed.vindices[2]*2,   0, 0.166);
+    H01.addValue(seed.vindices[2]*2+1, 1, 0.166);
+
+    //Hprime.
+    SparseMatrix *Hprime = new SparseMatrix(H00 + H00.getTranspose());
+    LinearSolver *m_orientSolver = new LinearSolver(Hprime);
+
+    //D
+    SparseMatrix *D = new SparseMatrix(H01 + H10.getTranspose());
+
+    //calculating D*q
+    double DQf[model->numvertices*2];
+    double q[2];
+    D->multiply(DQf, q, model->numvertices*2, 1);
+
+    //calculate -D*q-f0
+    for (int row = 0; row < D->getM(); row++) {
+        DQf[row] = -DQf[row] - f0[row];
+    }
+
+    double unconstrained[model->numvertices*2];
+    m_orientSolver->solve(DQf, unconstrained);
+
+}
+
+double2 relativeCoord(double2 A, double2 B, double2 C) {
+    double2 eCA = A-C;
+    double2 eBA = A-B;
+    double2 eBAs = double2(-eBA.y, eBA.x);
+    double d = eBA.x*eBA.x+eBA.y*eBA.y;
+    double x = (eCA.x*eBA.x+eCA.y*eBA.y) / d;
+    double y = (eCA.x*eBAs.x+eCA.y*eBAs.y) / d;
+
+    return double2(x,y);
+}
+
+/* baryCoord: Barycentric Coordinates
+ * To express phi(T) as a linear combination of points phi(A), phi(B), phi(C),
+ * phi(T) = alpha * phi(A) + beta * phi(B) + gamma * phi(C)
+ * alpha + beta + gamma = 0;
+ * assuming T is coplanar with A, B, C
+ */
+double2 baryCoord(double2 A, double2 B, double2 C, double2 T) {
+    double det   = 1/((A.x-C.x)*(B.y-C.y)-(A.y-C.y)*(B.x-C.y));
+    double alpha = ((B.y-C.y)*T.x + (-B.x+C.x)*T.y)*det;
+    double beta  = ((-A.y+C.y)*T.x + (A.x-C.x)*T.y)*det;
+    return double2(alpha, beta);
+}
+
 /**
   @paragraph Creates the intial framebuffers for drawing.  Called by the ctor once
   upon initialization.

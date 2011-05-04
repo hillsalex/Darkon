@@ -162,3 +162,131 @@ struct Camera {
     float3 eye, center, up;
     float fovy, near, far;
 };
+
+//DOUBLE2 STUFFS PLEASE WORK.
+struct double2 {
+
+
+    double2(double v0 = 0, double v1 = 0) : x(v0), y(v1) { }
+    double2(double *data) { x = data[0]; y = data[1]; }
+
+    static inline double2 zero() { return double2(0,0); }
+
+    #define VECOP_PCW(op) { x op rhs.x; y op rhs.y; return *this; }
+    #define VECOP_SCA(op) { x op rhs;   y op rhs  ; return *this; }
+
+    inline double2& operator  = (const double2& rhs) VECOP_PCW( =) /// equality assignment
+    inline double2& operator += (const double2& rhs) VECOP_PCW(+=) /// piecewise addition operator
+    inline double2& operator -= (const double2& rhs) VECOP_PCW(-=) /// piecewise subtraction operator
+
+
+    inline double2  operator  + (const double2& rhs) const { return double2(*this) += rhs; } /// piecewise addition
+    inline double2  operator  - (const double2& rhs) const { return double2(*this) -= rhs; } /// piecewise subtraction
+
+    inline double2& operator += (const double  rhs)  VECOP_SCA(+=) /// scalar addition operator
+    inline double2& operator -= (const double  rhs)  VECOP_SCA(-=) /// scalar subtraction operator
+    inline double2& operator *= (const double  rhs)  VECOP_SCA(*=) /// scalar multiplication operator
+    inline double2& operator /= (const double  rhs)  VECOP_SCA(/=) /// scalar division operator
+
+    inline double2  operator  + (const double  rhs) const { return double2(*this) += rhs; } /// piecewise addition
+    inline double2  operator  - (const double  rhs) const { return double2(*this) -= rhs; } /// piecewise subtraction
+    inline double2  operator  * (const double  rhs) const { return double2(*this) *= rhs; } /// piecewise multiplication
+    inline double2  operator  / (const double  rhs) const { return double2(*this) /= rhs; } /// piecewise multiplication
+
+    #undef VECOP_PCW
+    #undef VECOP_SCA
+
+
+    inline double magnitude2() { return x*x + y*y; }
+    inline double magnitude() { return sqrtf(magnitude2()); }
+
+    inline bool operator==(const double2 &rhs) {
+            return (x == rhs.x && y == rhs.y);
+    }
+
+    inline bool operator!=(const double2 &rhs) {
+            return (x != rhs.x || y != rhs.y);
+    }
+
+    union {
+        struct {
+            double x, y;
+        };
+        struct {
+            double s, t;
+        };
+        double data[2];
+    };
+};
+
+
+inline double2 operator*(const double scale, const double2 &rhs) {
+    return double2(rhs.x * scale, rhs.y * scale);
+}
+inline double2 operator-(const double2 &rhs) {
+    return double2(-rhs.x, -rhs.y);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const double2& f) {
+        os <<"[";
+        for (unsigned i = 0; i < 2; ++i) {
+            os << f.data[i] << ",";
+        }
+        os << "]";
+        return os;
+}
+
+
+// Dense matrix ops
+// Naming convention first two letters are types
+// ex: mm is matrix matrix, mv is matrix vector
+// third letter after _ is type.  Final letters are op.
+// memory must be alocated to the output pointer by the caller
+
+inline void vv_dmult(double *a, double *b, double &out, int m) {
+    out = 0.f;
+    for(int i=0; i<m; i++) {
+        out +=a[i]*b[i];
+    }
+}
+#include <assert.h>
+ inline void mm_dmult(double *A, double *B, double *out, int rowsA, int colsA, int rowsB, int colsB) {
+    assert(colsA == rowsB);
+    for(int i = 0; i < rowsA; i++)
+    {
+        for(int j = 0; j < colsB; j++)
+        {
+            out[i*colsB+j] = 0;
+            for(int k = 0; k < colsA; k++)
+            {
+                out[i*colsB+j] += A[i*colsA + k] * B[k*colsB + j];
+            }
+        }
+    }
+    /*for(int i=0, s=0; i<m; i++) {
+        for(int j=0; j<n; j++, s++) {
+            out[s] = 0.f;
+            for(int k=0; k<n; k++) {
+                out[s] += A[(i*n)+k] * B[(k*n)+j];
+            }
+        }
+    }*/
+}
+
+
+inline void mv_dmult(double *A, double *b, double *out, int m, int n) {
+    for(int i=0; i<m; i++) {
+        out[i] = 0.0;
+        for(int j=0; j<n; j++){
+            out[i] += A[i*n+j] * b[j];
+        }
+    }
+}
+
+inline void m_dtrans(double *A, double *At, int m, int n) {
+    for(int i=0, s=0; i<n; i++) {
+        for(int j=0; j<m; j++,s++) {
+            At[s] = A[(j*n)+i];
+        }
+    }
+}
