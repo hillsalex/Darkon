@@ -31,9 +31,12 @@
 #include <QGLFramebufferObject>
 #include <GL/glext.h>
 #include <QFileDialog>
+#include <QVector>
 
+//including solver things.
 #include "src/common.h"
 #include "src/SparseMatrix.h"
+#include "src/LinearSolver.h"
 
 //***********************************
 //INCLUDE SHOTS HERE AS YOU MAKE THEM
@@ -261,10 +264,13 @@ void DrawEngine::create_curvatures()
 
 void DrawEngine::orientTexture(GLMmodel* model, QVector<int> patch) {
     //debugging: see if you can get this to be just the number of vertices in the vector -> hashmap, maybe.
-    SparseMatrix H00 = SparseMatrix(model->numtriangles*6, model->numtriangles*6); //*6 for 3 vert/tri, xy/vert
+    SparseMatrix H00 = SparseMatrix(model->numvertices*2, model->numvertices*2);
 
     int idx_ax, idx_ay, idx_bx, idx_by, idx_cx, idx_cy;
     double alpha, beta;
+
+    //calculating f0.
+    double f0[model->numvertices*2];
 
     //entering in values for H00 for all vertices.
     for (int tri = 0; tri < patch.size(); tri++) {
@@ -319,11 +325,19 @@ void DrawEngine::orientTexture(GLMmodel* model, QVector<int> patch) {
         H00.addValue(idx_cy, idx_by, H00.getValue(idx_cy, idx_by) - beta*beta - alpha*beta);
         //cy cy = (alpha+beta)^2
         H00.addValue(idx_cy, idx_cy, H00.getValue(idx_cy, idx_cy) + (alpha+beta)*(alpha+beta));
+
+        //filling in f0.
+        f0[idx_ax] += -2*alpha; //-2alpha*s_x
+        f0[idx_ay] += -2*alpha; //-2alpha*t_y
+        f0[idx_bx] += -2*beta;  //-2beta*s_x
+        f0[idx_by] += -2*beta;  //-2beta*t_y
+        f0[idx_cx] += -2*alpha-2*beta; //-2*alpha*s_x-2*beta*s_x
+        f0[idx_cy] += -2*alpha-2*beta; //-2*alpha*t_y-2*beta*t_y
     }
 
     //making H01, H10
-    SparseMatrix H10 = SparseMatrix(2,model->numtriangles*6);
-    SparseMatrix H01 = SparseMatrix(model->numtriangles*6,2);
+    SparseMatrix H10 = SparseMatrix(2,model->numvertices*2);
+    SparseMatrix H01 = SparseMatrix(model->numvertices*2,2);
 
     GLMtriangle seed = T(patch.at(0));
 
@@ -344,8 +358,24 @@ void DrawEngine::orientTexture(GLMmodel* model, QVector<int> patch) {
 
     //Hprime.
     SparseMatrix *Hprime = new SparseMatrix(H00 + H00.getTranspose());
+    LinearSolver *m_orientSolver = new LinearSolver(Hprime);
+
     //D
     SparseMatrix *D = new SparseMatrix(H01 + H10.getTranspose());
+
+    //calculating D*q
+    double DQf[model->numvertices*2];
+    double q[2];
+    D->multiply(DQf, q, model->numvertices*2, 1);
+
+    //calculate -D*q-f0
+    for (int row = 0; row < D->getM(); row++) {
+        DQf[row] = -DQf[row] - f0[row];
+    }
+
+    double unconstrained[model->numvertices*2];
+    m_orientSolver->solve(DQf, unconstrained);
+
 }
 
 double2 relativeCoord(double2 A, double2 B, double2 C) {
@@ -363,15 +393,14 @@ double2 relativeCoord(double2 A, double2 B, double2 C) {
  * To express phi(T) as a linear combination of points phi(A), phi(B), phi(C),
  * phi(T) = alpha * phi(A) + beta * phi(B) + gamma * phi(C)
  * alpha + beta + gamma = 0;
- * debugging: make sure that this equation works for alpha + beta + gamma = 1
+ * assuming T is coplanar with A, B, C
  */
 double2 baryCoord(double2 A, double2 B, double2 C, double2 T) {
-    double alpha = ((B.y-C.y)*(T.x-C.x)+(C.x-B.x)*(T.y-C.y))/((B.y-C.y)*(A.x-C.x)+(C.x-B.x)*(A.y-C.y));
-    double beta  = ((C.y-A.y)*(T.x-C.x)+(A.x-C.x)*(T.y-C.y))/((C.y-A.y)*(B.x-C.x)+(A.x-C.x)*(B.y-C.y));
-
+    double det   = 1/((A.x-C.x)*(B.y-C.y)-(A.y-C.y)*(B.x-C.y));
+    double alpha = ((B.y-C.y)*T.x + (-B.x+C.x)*T.y)*det;
+    double beta  = ((-A.y+C.y)*T.x + (A.x-C.x)*T.y)*det;
     return double2(alpha, beta);
 }
-
 
 /**
   @paragraph Creates the intial framebuffers for drawing.  Called by the ctor once
