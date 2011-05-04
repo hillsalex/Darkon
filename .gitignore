@@ -1,3 +1,5 @@
 #ignore the .pro.user file
 Hatching/Hatching.pro.user
 *.o
+Hatching-build-desktop/Hatching
+Hatching-build-desktop/Makefile
