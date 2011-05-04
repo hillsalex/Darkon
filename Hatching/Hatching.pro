@@ -27,7 +27,8 @@ src/SparseMatrix.inl\
     src/shot/MPSandbox.cpp \
     src/shot/tamgenerator.cpp \
     Sphere.cpp \
-    src/shot/SphereShot.cpp
+    src/shot/SphereShot.cpp \
+    LappedUtils.cpp
 
 
 
@@ -51,7 +52,8 @@ src/matrix.h\
     src/shot/MPSandbox.h \
     src/shot/tamgenerator.h \
     Sphere.h \
-    src/shot/SphereShot.h
+    src/shot/SphereShot.h \
+    LappedUtils.h
 
 FORMS += mainwindow.ui
 INCLUDEPATH += src src/shot src/lib src/glm \
