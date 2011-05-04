@@ -52,9 +52,6 @@ void MPSandbox::begin()
     }
         patr.end();
     img.save("/home/mprice/Desktop/Patch/LappedUtiloutput.png","PNG");
-
-
-
 }
 
 
