@@ -87,6 +87,7 @@ DrawEngine::DrawEngine(const QGLContext *context,int w,int h, GLWidget* widget) 
     load_shaders();
     load_models();
     load_textures();
+    //create_curvatures();
     create_fbos(w,h);
 
 

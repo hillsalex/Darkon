@@ -66,7 +66,10 @@ struct polyHull
 {
     QList<vert2d*>* verts;
     QList<edge2d*>* edges;
+    int imgw;
+    int imgh;
     polyHull(QList<vert2d*>* vs, QList<edge2d*>* es):verts(vs),edges(es){}
+    //returns true if the given segment intersects the given edge
     bool isectEdge(edge2d* e, int x0, int y0, int x1, int y1)
     {
         if(x0==x1 && e->v1->x == e->v2->x)return false;//both vertical
@@ -107,12 +110,33 @@ struct polyHull
         if(isecx<xmin || isecx>xmax || isecy<ymin || isecy>ymax)return false;
         return true;
     }
-    bool isectHull(int x0, int y0, int x1, int y1)
+    //returns true if the given segment intersects any edge in the hull
+    bool isectAnyEdge(int x0, int y0, int x1, int y1)
     {
         for(int i=0;i<edges->size();i++)
-        {
+        {//just check intersection for every edge
             if(isectEdge(edges->at(i),x0,y0,x1,y1))return true;
         }return false;
+    }
+    //returns true if the point is in the interior of the hull
+    bool isInteriorPt(int x, int y)
+    {
+        //use segment (0,0) --> (x,y)
+        int numIntersections=0;
+        for(int i=0;i<edges->size();i++)
+        {//just check intersection for every edge
+            if(isectEdge(edges->at(i),0,0,x,y))numIntersections++;
+        }
+    }
+    //returns true if the segment intersects the hull
+    bool isectHull (int x0,int y0,int x1, int y1)
+    {//A segment intersects the hull if A: it intersects an edge of the hull or B: one point is inside the hull
+        return(isectAnyEdge(x0,y0,x1,y1) || isInteriorPt(x0,y0));
+    }
+    //basically the same as above, but first converts the UV coords into texture space coords (ints)
+    bool isectHullUV(float s0, float t0, float s1, float t1)
+    {
+        return (isectAnyEdge(s0*imgw,(1.0-t0)*imgh, s1*imgw, (1.0-t1)*imgh) || isInteriorPt(s0*imgw,(1.0-t0)*imgh));
     }
 };
 
