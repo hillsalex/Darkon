@@ -415,5 +415,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
     */
 
    polyHull* pHull = new polyHull(vLi,eLi);
+   pHull->imgh = h;
+   pHull->imgw = w;
    return pHull;
 }
