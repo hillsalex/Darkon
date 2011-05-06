@@ -1,15 +1,59 @@
 #include "meshoperator.h"
 #include "src/alglib/solvers.h"
 #include "src/alglib/ap.h"
+#include "src/alglib/alglibmisc.h"
+#include "src/alglib/alglibinternal.h"
+#include "qhash.h"
+#include "qset.h"
+#include "SparseMatrix.h"
+#include "math/CS123Algebra.h"
 #include <iostream>
+#include "math.h"
 
 using namespace alglib;
 using namespace std;
+
 MeshOperator::MeshOperator()
 {
 }
 
-static void MeshOperator::calculateCurvatures(GLMmodel* model)
+void printVec3(vec3<float>* v)
+{
+
+     cout << '[' << v->x << " , " << v->y << " , " << v->z <<']' << endl;
+}
+
+void printMatrix(SparseMatrix* s)
+{
+    for (int i=0;i<s->getM();i++)
+    {
+        cout << '[';
+        for (int j=0;j<s->getN();j++)
+        {
+            cout << s->getValue(i,j) << ',';
+        }
+        cout <<']' << endl;
+    }
+}
+
+
+vec3<float>* mattoVec3(SparseMatrix* m)
+{
+    vec3<float>* v = new vec3<float>();
+    v->x= m->getValue(0,0);
+    v->y= m->getValue(1,0);
+    v->z= m->getValue(2,0);
+}
+
+
+SparseMatrix* vec3toMat(vec3<float> v)
+{
+    SparseMatrix* m = new SparseMatrix(3,1);
+    m->setValue(0,0,v.x);
+    m->setValue(1,0,v.y);
+    m->setValue(2,0,v.z);
+}
+void MeshOperator::calculateCurvatures(GLMmodel* model)
 {
     QHash<int,QSet<int>* > adjacencyMatrix;
     QHash<int, int> vertexNormalComps;
@@ -28,7 +72,7 @@ static void MeshOperator::calculateCurvatures(GLMmodel* model)
         }
         else
         {
-            QSet<int>* set = new QSet<int>;
+            QSet<int>* set = new QSet<int>();
             set->insert(v1);
             set->insert(v2);
             adjacencyMatrix.insert(v0,set);
@@ -95,6 +139,7 @@ static void MeshOperator::calculateCurvatures(GLMmodel* model)
 
         vec3<float> v = normal.cross(u);
         v.normalize();
+
         SparseMatrix M = SparseMatrix(3,3);
         M.setValue(0,0,u.x);
         M.setValue(0,1,u.y);
@@ -136,8 +181,31 @@ static void MeshOperator::calculateCurvatures(GLMmodel* model)
         densesolverlsreport myRep;
         ae_int_t  myAEint = 1;
         rmatrixsolvels(Q,adjacentVertices.size(),3,B,0.0,myAEint,myRep,X);
-        cout << Q.tostring(5) << endl;
-        cout << B.tostring(5) << endl;
-        cout << X.tostring(5) << endl;
+        real_2d_array eigMat = real_2d_array();
+        eigMat.setlength(2,2);
+        eigMat[0][0]=X[0];
+        eigMat[0][1]=X[1];
+        eigMat[1][0]=X[1];
+        eigMat[1][1]=X[2];
+        real_1d_array evals;
+        real_2d_array evecs;
+        smatrixevd(eigMat,2,1,false,evals,evecs);
+        vec3<float> curvature;
+        int which=0;
+        if (fabs(evals[0])<fabs(evals[1]))
+            which=1;
+        curvature.x = evecs[0][which];
+        curvature.y = evecs[1][which];
+        curvature.x = 0;
+        SparseMatrix* curvatureMat = vec3toMat(curvature);
+        SparseMatrix Mtrans = M.getTranspose();
+        curvatureMat = &(Mtrans * (*curvatureMat));
+        curvature = *mattoVec3(curvatureMat);
+        curvature.normalize();
+        model->curvatures[vertexIndex*3]=curvature.x;
+        model->curvatures[vertexIndex*3+1]=curvature.y;
+        model->curvatures[vertexIndex*3+2]=curvature.z;
     }
 }
+
+

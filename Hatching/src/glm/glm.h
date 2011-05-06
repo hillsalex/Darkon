@@ -1,3 +1,5 @@
+#include <qgl.h>
+
 #pragma once
 
 #ifndef M_PI

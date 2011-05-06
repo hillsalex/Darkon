@@ -28,7 +28,14 @@ src/SparseMatrix.inl\
     src/shot/tamgenerator.cpp \
     Sphere.cpp \
     src/shot/SphereShot.cpp \
-    LappedUtils.cpp
+    LappedUtils.cpp \
+    src/meshoperator.cpp \
+    src/alglib/solvers.cpp \
+    src/alglib/linalg.cpp \
+    src/alglib/ap.cpp \
+    src/alglib/alglibmisc.cpp \
+    src/alglib/alglibinternal.cpp \
+    src/shot/modelshot.cpp
 
 
 
@@ -53,7 +60,15 @@ src/matrix.h\
     src/shot/tamgenerator.h \
     Sphere.h \
     src/shot/SphereShot.h \
-    LappedUtils.h
+    LappedUtils.h \
+    src/meshoperator.h \
+    src/alglib/stdafx.h \
+    src/alglib/solvers.h \
+    src/alglib/linalg.h \
+    src/alglib/ap.h \
+    src/alglib/alglibmisc.h \
+    src/alglib/alglibinternal.h \
+    src/shot/modelshot.h
 
 FORMS += mainwindow.ui
 INCLUDEPATH += src src/shot src/lib src/glm \

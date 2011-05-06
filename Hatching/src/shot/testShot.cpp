@@ -8,6 +8,7 @@ testShot::testShot(DrawEngine* parent,QHash<QString, QGLShaderProgram *>* shad, 
 {
     //lasts 150 frames
     m_lifespan = 150;
+    m_operator =  new MeshOperator();
 }
 
 testShot::~testShot()
@@ -20,6 +21,12 @@ testShot::~testShot()
 void testShot::begin()
 {
 
+    QList<QString> keys = models_->keys();
+    foreach (QString k,keys)
+    {
+        GLMmodel* model = models_->value(k).model;
+        m_operator->calculateCurvatures(model);
+    }
 }
 
 //called every frame before draw.
@@ -42,11 +49,19 @@ void testShot::draw()
     glEnable(GL_DEPTH_TEST);
     glMatrixMode(GL_MODELVIEW);
  glActiveTexture(GL_TEXTURE0);
-    foreach (Model m,models_)
-    {
-        GLMmodel* model = m.model;
-        MeshOperator::calculateCurvatures(model);
-    }
+ QList<QString> keys = models_->keys();
+ glBegin(GL_LINES);
+
+ GLMmodel* model = models_->value("nail").model;
+ GLfloat* curvatures = model->curvatures;
+ GLfloat* vertices = model->vertices;
+ for (int i=0;i<model->numvertices;i++)
+ {
+     glVertex3f(vertices[i*3], vertices[i*3+1],vertices[i*3+2]); // origin of the line
+     glVertex3f(vertices[i*3]+curvatures[i*3], vertices[i*3+1]+curvatures[i*3+1],vertices[i*3+2]+curvatures[i*3+2]); // ending point of the line
+ }
+
+ glEnd( );
  glBindTexture(GL_TEXTURE_CUBE_MAP, textures_->value("cube_map_1"));
  shader_programs_->value(NAIL_SHADER)->bind();
  shader_programs_->value(NAIL_SHADER)->setUniformValue("CubeMap",0);
