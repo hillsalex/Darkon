@@ -491,7 +491,7 @@ QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* poly
     //dequeue edge e
         //find other triangle in edge
         //if tri is not in patch
-            //if e isects hull
+            //if e isects hull  //see struct polyHull::isectUV
                 //if homeomorphic to a disc (new vert not in patch OR only 1 edge not in patch)
                   //if new vert already in patch
                       //just add triangle to patch!
