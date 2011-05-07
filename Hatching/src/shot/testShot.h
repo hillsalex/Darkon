@@ -1,7 +1,7 @@
 #ifndef TESTSHOT_H
 #define TESTSHOT_H
 #include <shot.h>
-
+#include "meshoperator.h"
 
 class testShot : public Shot
 {
@@ -17,6 +17,7 @@ public:
     //called every frame before draw.
     void update();
 
+    MeshOperator* m_operator;
     //draw!
     void draw();
 };

@@ -43,6 +43,7 @@
 #include <testShot.h>
 #include <MPSandbox.h>
 #include <SphereShot.h>
+#include <modelshot.h>
 //***********************************
 #define T(x) (model->triangles[(x)])
 
@@ -99,8 +100,9 @@ DrawEngine::DrawEngine(const QGLContext *context,int w,int h, GLWidget* widget) 
     m_widget = widget;
 
     //m_shots->append(  new testShot(this, &shader_programs_, &textures_, &models_));
+    m_shots->append(  new modelShot(this, &shader_programs_, &textures_, &models_));
     //m_shots->append(  new SphereShot(this, &shader_programs_, &textures_, &models_));
-    m_shots->append(  new MPSandbox(this, &shader_programs_, &textures_, &models_));
+    //m_shots->append(  new MPSandbox(this, &shader_programs_, &textures_, &models_));
 
     m_shots->at(m_curShot)->begin();
     /****************************************/
@@ -136,6 +138,19 @@ void DrawEngine::load_models() {
     models_["nail"].model = glmReadOBJ(  "../Hatching/src/models/nail.obj"  );
     glmUnitize(models_["nail"].model);
     models_["nail"].idx = glmList(models_["nail"].model,GLM_SMOOTH);
+
+    models_["buddha"].model = glmReadOBJ(  "../Hatching/src/models/buddha.obj"  );
+    glmUnitize(models_["buddha"].model);
+    models_["buddha"].idx = glmList(models_["buddha"].model,GLM_SMOOTH);
+
+    models_["teapot"].model = glmReadOBJ(  "../Hatching/src/models/teapot.obj"  );
+    glmUnitize(models_["teapot"].model);
+    models_["teapot"].idx = glmList(models_["teapot"].model,GLM_SMOOTH);
+
+    models_["ring"].model = glmReadOBJ(  "../Hatching/src/models/ring.obj"  );
+    glmUnitize(models_["ring"].model);
+    models_["ring"].idx = glmList(models_["ring"].model,GLM_SMOOTH);
+
 
 
 }

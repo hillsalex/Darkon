@@ -9,7 +9,7 @@ class MeshOperator
 {
 public:
     MeshOperator();
-    static void calculateCurvatures(GLMmodel* model);
+    void calculateCurvatures(GLMmodel* model);
 };
 
 #endif // MESHOPERATOR_H

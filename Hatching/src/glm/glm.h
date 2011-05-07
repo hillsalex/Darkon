@@ -1,3 +1,5 @@
+#include <qgl.h>
+
 #pragma once
 
 #include <qgl.h>
