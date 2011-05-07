@@ -1,4 +1,5 @@
 #include "meshoperator.h"
+#include "SparseMatrix.h"
 #include "src/alglib/solvers.h"
 #include "src/alglib/ap.h"
 #include <iostream>
@@ -8,7 +9,7 @@ using namespace std;
 MeshOperator::MeshOperator()
 {
 }
-
+/*
 static void MeshOperator::calculateCurvatures(GLMmodel* model)
 {
     QHash<int,QSet<int>* > adjacencyMatrix;
@@ -141,3 +142,4 @@ static void MeshOperator::calculateCurvatures(GLMmodel* model)
         cout << X.tostring(5) << endl;
     }
 }
+*/

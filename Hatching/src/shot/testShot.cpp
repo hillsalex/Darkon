@@ -42,11 +42,11 @@ void testShot::draw()
     glEnable(GL_DEPTH_TEST);
     glMatrixMode(GL_MODELVIEW);
  glActiveTexture(GL_TEXTURE0);
-    foreach (Model m,models_)
+    /*foreach (Model m,models_)
     {
         GLMmodel* model = m.model;
         MeshOperator::calculateCurvatures(model);
-    }
+    }*/
  glBindTexture(GL_TEXTURE_CUBE_MAP, textures_->value("cube_map_1"));
  shader_programs_->value(NAIL_SHADER)->bind();
  shader_programs_->value(NAIL_SHADER)->setUniformValue("CubeMap",0);

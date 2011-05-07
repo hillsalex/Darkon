@@ -4,7 +4,8 @@
 #include <QImage>
 #include <iostream>
 #include <assert.h>
-#include <CS123Common.h>
+#include <math/CS123Algebra.h>
+#include <glm.h>
 using std::cout;
 using std::endl;
 
@@ -140,6 +141,51 @@ struct polyHull
     }
 };
 
+struct PatchTri;
+struct PatchVert
+{
+    //the index of the x coordinate in the GLM vertex array
+    int GLMidx;
+    //the coordinate values
+    //float x,y,z;
+    Vector4 pos;
+    //the texture coordinates (we assign these)
+    float s,t;
+    //the triangles that contain this vertex
+    QList<PatchTri*>* tris;
+    PatchVert(){tris = new QList<PatchTri*>();}
+};
+
+
+struct PatchTri
+{
+    //the indices of the patchverts we made
+    PatchVert* v0;
+    PatchVert* v1;
+    PatchVert* v2;
+    //the GLM triangle (maybe some redundant information but w/e)
+    _GLMtriangle* GLMtri;
+    Vector4 tangent;
+};
+
+struct PatchEdge
+{
+    PatchVert* v0;
+    PatchVert* v1;
+    int ntris;
+    PatchTri* t1;
+    PatchTri* t2;
+    PatchEdge(PatchVert* _v0, PatchVert* _v1):v0(_v0),v1(_v1){ntris=0;}
+    void addTri(PatchTri* t){if(ntris==0){ntris++;t1=t;}else if(ntris==1){ntris++;t2=t;}else{cout<<"TRIED TO ADD MORE THAN TWO TRIANGLES TO AN EDGE"<<endl;}}
+};
+
+
+struct LappedPatch
+{
+    PatchTri seed;
+    QList<PatchTri*> tris;
+};
+
 
 class LappedUtils
 {
@@ -148,6 +194,9 @@ public:
     int ccw(vert2d* p1,vert2d* p2,vert2d* p3);
     void printEdge(edge2d* e){cout<<"{("<<e->v1->x<<","<<e->v1->y<<") ("<<e->v2->x<<","<<e->v2->y<<")}"<<endl;}
     polyHull* getPolyHull(QImage* blob,int iterations);
+    QList<LappedPatch>* generatePatches(GLMmodel* model, polyHull* polyhull);
+    vec2<float> estimateUV(PatchVert* A, PatchVert* B, PatchVert* C);
+    void assignSeedUV(PatchTri* seed);
 
 };
 

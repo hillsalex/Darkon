@@ -21,6 +21,67 @@ int LappedUtils::ccw(vert2d* p1,vert2d* p2,vert2d* p3)
         return -1;
 }
 
+//Assuming A and B have correct UV coords and world space coords, return an estimate of C's UV coords
+vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C)
+{
+    Vector4 AC(C->pos.x - A->pos.x, C->pos.y - A->pos.y, C->pos.z - A->pos.z,0);
+    Vector4 AB(B->pos.x - A->pos.x, B->pos.y - A->pos.y, B->pos.z - A->pos.z,0);
+
+    Vector4 AB_r = AB * getRotMat(Vector4(A->pos.x,A->pos.y,A->pos.z,0),AC.cross(AB),M_PI/2.0);
+    float x = AC.dot(AB) / AB.getMagnitude2();
+    float y = AC.dot(AB_r) / AB.getMagnitude2();
+
+    vec2<float> ABp,AB_rp;
+    ABp.x = B->s - A->s;
+    ABp.y = B->t - A->t;
+    AB_rp.x = ABp.y;
+    AB_rp.y = -ABp.x;
+
+    vec2<float> Ap,Bp,Cp;
+    Ap.x = A->s; Ap.y = A->t; Bp.x = B->s; Bp.y = B->t;
+    Cp = Ap + x*ABp + y*AB_rp;
+
+    //cout<<"AB: "<<AB<<" AC: "<<AC<<" AB_r: "<<AB_r<<" ABp: "<<ABp<<" AB_rp: "<<AB_rp<<" x: "<<x<<" y: "<<y<<" Ap:"<<Ap<<" Bp: "<<Bp<<" Cp: "<<Cp<<endl;
+    //cout<<"AC dot AB: "<<AC.dot(AB)<<" AB dot AC: "<<AB.dot(AC)<<" mag AB: "<<AB.getMagnitude()<<endl;
+    return Cp;
+}
+
+void LappedUtils::assignSeedUV(PatchTri* seed)
+{
+    Vector4 A,B,C;
+    A = seed->v0->pos;
+    B = seed->v1->pos;
+    C = seed->v2->pos;
+    //get normalized normal vector
+    Vector4 norm = ((B-A).cross(C-A)).getNormalized();
+    //find angle b/w norm and <0,0,1>
+    double angle = acos(norm.dot(Vector4(0,0,1.0,0)));
+    //get center pt
+    Vector4 ctr = (A+B+C)/3.0;
+    //get rotation matrix
+    Matrix4x4 rotMat = getRotMat(ctr,norm.cross(Vector4(0,0,1.0,0)),angle);
+    //rotate
+    Vector4 Ap, Bp, Cp, Tp;
+    Ap = A*rotMat;
+    Bp = B*rotMat;
+    Cp = C*rotMat;
+    Tp = seed->tangent * rotMat;
+    double avgLen = (Ap.getMagnitude() + Bp.getMagnitude() + Cp.getMagnitude())/3.0;
+    ctr = (Ap+Bp+Cp)/3.0;
+    Ap = Ap - ctr + Vector4(0.5,0.5,0,0);
+    Bp = Bp - ctr + Vector4(0.5,0.5,0,0);
+    Cp = Cp - ctr + Vector4(0.5,0.5,0,0);
+    //we're forgetting about alignment for now, just have a similar triangle centered at <0.5,0.5>
+    Ap = Ap*0.25/avgLen;
+    Bp = Bp*0.25/avgLen;
+    Cp = Cp*0.25/avgLen;
+    seed->v0->s = Ap.x;
+    seed->v0->t = Ap.y;
+    seed->v1->s = Bp.x;
+    seed->v1->t = Bp.y;
+    seed->v2->s = Cp.x;
+    seed->v2->t = Cp.y;
+}
 
 polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
 {
@@ -167,7 +228,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
             //if one of the points other than the first was vseed, set done flag
             //arrange pointers, etc for our four points
 
-   for(int i=0;i<6;i++)
+   for(int i=0;i<iterations;i++)
    {
        cout<<"beginning. vseed: "<<vseed<<endl;
 
@@ -391,31 +452,171 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
     }
 }
 
-   //DEBUG RENDER OUTPUT
-    /*
-    QPainter patr(&img);
-    patr.setPen(Qt::black);
-    for(int i=0;i<vLi->size();i++)
-    {
-        vert2d* v = vLi->at(i);
-        patr.drawLine(v->e1->v1->x,v->e1->v1->y,v->e1->v2->x,v->e1->v2->y);
-        patr.drawLine(v->e2->v1->x,v->e2->v1->y,v->e2->v2->x,v->e2->v2->y);
-    }
-    patr.end();
-    for(int i=0;i<vLi->size();i++)
-    {
-        vert2d* v = vLi->at(i);
-        int _idx = v->y * w + v->x;
-        assert(v->nedges==2);
-        imgdata[4*_idx]=0;
-        imgdata[4*_idx+1]=0;
-        imgdata[4*_idx+2]=255;
-    }
-    img.save("/home/mprice/Desktop/Patch/output.png","PNG");
-    */
-
    polyHull* pHull = new polyHull(vLi,eLi);
    pHull->imgh = h;
    pHull->imgw = w;
    return pHull;
+}
+
+//OKAY LETS GET REAL HERE
+//for now lets just try to create a single patch
+QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* polyhull)
+{
+
+//*************REFERENCE PSEUDOCODE*************************************
+//PREPROCESSING:
+    //Convert entire model into our format.  I know this is goofy but its only done once and makes it easier.
+
+    //For each triangle:
+        //make a PatchTri
+            //populate vertices - make sure not a repeat by hashing
+                //add this triangle to the vert ;)
+            //populate edges - make sure not a repeat by hashing
+                //add this triangle to the edge ;)
+
+
+//choose seed triangle, get center point
+    //for now, tangent equals vo--->v1  (should be curvature!)
+//assign UVS to PatchTri s.t. centered at .5,.5 and tangent is aligned with texture //HOW???? NEED BITANGENT OR NO?  HOW TO DETERMINE SCALE?
+    //enqueue edges of triangle
+
+//make our patchlist to return!
+
+//WHILE MESH IS NOT COVERED:
+
+//make visitedSets of edges, verts, tris
+//mark everything from seed as visited
+
+//while Q not empty
+    //dequeue edge e
+        //find other triangle in edge
+        //if tri is not in patch
+            //if e isects hull
+                //if homeomorphic to a disc (new vert not in patch OR only 1 edge not in patch)
+                  //if new vert already in patch
+                      //just add triangle to patch!
+                          //enqueue new edges of triangle
+                          //and mark them as visited, as well as new tri itself
+                  //else need to add vert:
+                      //estimate parametrization of new vert like so:
+                          //for each triangle containing vert and an already-mapped edge
+                              //stick a similar triangle onto that edge, and see where the corresponding location of vert is
+                          //take average of those guys as UV for new vert
+                      //then add triangle like above: enq new edges, mark any new edges, vert, tri as visited
+   //patch is done, delete visitedSets, continue to next patch
+
+    //mesh is covered (or we stopped making patches for whatever reason
+
+    //return patch list!
+
+    //*****************OKAY LETS ACTUALLY IMPLEMENT IT******************************
+
+    //PREPROCESSING
+    GLMtriangle* glmtris = model->triangles;
+    GLfloat* glmverts = model->vertices;
+    QHash<GLuint,PatchVert*>* vertsMade = new QHash<GLuint,PatchVert*>();
+    QHash<QPair<PatchVert*,PatchVert*>,PatchEdge*>* edgesMade = new QHash<QPair<PatchVert*,PatchVert*>,PatchEdge*>();
+    PatchTri** trisMade = new PatchTri*[model->numtriangles];
+
+    for(int i=0;i<model->numtriangles;i++)
+    {
+        PatchTri* pt = new PatchTri();
+        trisMade[i] = pt;
+        pt->GLMtri = &glmtris[i];
+
+        //make/find PatchVerts for new triangle
+        for(int vi=0;vi<3;vi++)
+        {
+            PatchVert* v;
+            if(vertsMade->contains(pt->GLMtri->vindices[vi]))
+            {
+                 v = vertsMade->value(pt->GLMtri->vindices[vi]);
+                v->tris->append(pt);
+            }
+            else
+            {
+                v = new PatchVert();
+                v->GLMidx = pt->GLMtri->vindices[vi];
+                v->pos.x = glmverts[v->GLMidx];
+                v->pos.y = glmverts[v->GLMidx+1];
+                v->pos.z = glmverts[v->GLMidx+2];
+                v->tris->append(pt);
+            }
+            switch(vi)
+            {
+            case 0:
+                pt->v0=v;
+                break;
+            case 1:
+                pt->v1=v;
+                break;
+            case  2:
+                pt->v2=v;
+                break;
+            }
+        }
+
+        QPair<PatchVert*,PatchVert*> e01, e12, e20;
+        e01 = qMakePair(pt->v0,pt->v1);
+        e12 = qMakePair(pt->v1,pt->v2);
+        e20 = qMakePair(pt->v2,pt->v0);
+        //should triangles have pointers to their edges?
+        if(edgesMade->contains(e01))
+        {
+            PatchEdge* e = edgesMade->value(e01);
+            e->addTri(pt);
+        }
+        else
+        {
+            PatchEdge* e = new PatchEdge(pt->v0, pt->v1);
+            edgesMade->insert(e01,e);
+            edgesMade->insert(qMakePair(pt->v1,pt->v0),e);
+            e->addTri(pt);
+        }
+        if(edgesMade->contains(e12))
+        {
+            PatchEdge* e = edgesMade->value(e12);
+            e->addTri(pt);
+        }
+        else
+        {
+            PatchEdge* e = new PatchEdge(pt->v1, pt->v2);
+            edgesMade->insert(e12,e);
+            edgesMade->insert(qMakePair(pt->v2,pt->v1),e);
+            e->addTri(pt);
+        }
+        if(edgesMade->contains(e20))
+        {
+            PatchEdge* e = edgesMade->value(e20);
+            e->addTri(pt);
+        }
+        else
+        {
+            PatchEdge* e = new PatchEdge(pt->v2, pt->v0);
+            edgesMade->insert(e20,e);
+            edgesMade->insert(qMakePair(pt->v0,pt->v2),e);
+            e->addTri(pt);
+        }
+    }//OK TRIANGLES MADE
+
+
+    //WHILE MESH IS NOT COVERED******
+    for(int wtf=0; wtf<3; wtf++)//***
+    {                           //***
+    //WHILE MESH IS NOT COVERED******
+
+
+
+
+
+
+    //ENDWHILE MESH NOT COVERED*
+    }                       //**
+    //ENDWHILE MESH NOT COvERED*
+
+
+
+   // PatchTri* seed = trisMade[rand()%model->numtriangles];
+
+
 }
