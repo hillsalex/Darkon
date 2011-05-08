@@ -28,6 +28,7 @@ src/SparseMatrix.inl\
     src/shot/tamgenerator.cpp \
     Sphere.cpp \
     src/shot/SphereShot.cpp \
+    src/meshoperator.cpp \
     LappedUtils.cpp \
     src/meshoperator.cpp \
     src/alglib/solvers.cpp \
@@ -60,6 +61,7 @@ src/matrix.h\
     src/shot/tamgenerator.h \
     Sphere.h \
     src/shot/SphereShot.h \
+    src/meshoperator.h \
     LappedUtils.h \
     src/meshoperator.h \
     src/alglib/stdafx.h \

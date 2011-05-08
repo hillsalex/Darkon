@@ -1,4 +1,5 @@
 #include "meshoperator.h"
+#include "SparseMatrix.h"
 #include "src/alglib/solvers.h"
 #include "src/alglib/ap.h"
 #include "src/alglib/alglibmisc.h"

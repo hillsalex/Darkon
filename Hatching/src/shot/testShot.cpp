@@ -53,7 +53,7 @@ void testShot::draw()
  glBegin(GL_LINES);
 
  GLMmodel* model = models_->value("nail").model;
- GLfloat* curvatures = model->vertMaxCurvatures;
+ GLfloat* curvatures = model->curvatures;
  GLfloat* vertices = model->vertices;
  for (int i=0;i<model->numvertices;i++)
  {
