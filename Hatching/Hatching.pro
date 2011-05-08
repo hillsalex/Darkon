@@ -30,7 +30,6 @@ src/SparseMatrix.inl\
     src/shot/SphereShot.cpp \
     src/meshoperator.cpp \
     LappedUtils.cpp \
-    src/meshoperator.cpp \
     src/alglib/solvers.cpp \
     src/alglib/linalg.cpp \
     src/alglib/ap.cpp \
@@ -63,7 +62,6 @@ src/matrix.h\
     src/shot/SphereShot.h \
     src/meshoperator.h \
     LappedUtils.h \
-    src/meshoperator.h \
     src/alglib/stdafx.h \
     src/alglib/solvers.h \
     src/alglib/linalg.h \

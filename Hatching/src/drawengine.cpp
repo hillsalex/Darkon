@@ -151,6 +151,33 @@ void DrawEngine::load_models() {
     glmUnitize(models_["ring"].model);
     models_["ring"].idx = glmList(models_["ring"].model,GLM_SMOOTH);
 
+    models_["cylinder"].model = glmReadOBJ(  "../Hatching/src/models/Cylinder.obj"  );
+    glmUnitize(models_["cylinder"].model);
+    models_["cylinder"].idx = glmList(models_["cylinder"].model,GLM_SMOOTH);
+
+    models_["sphere"].model = glmReadOBJ(  "../Hatching/src/models/Sphere.obj"  );
+    glmUnitize(models_["sphere"].model);
+    models_["sphere"].idx = glmList(models_["sphere"].model,GLM_SMOOTH);
+
+    models_["torus"].model = glmReadOBJ(  "../Hatching/src/models/Torus.obj"  );
+    glmUnitize(models_["torus"].model);
+    models_["torus"].idx = glmList(models_["torus"].model,GLM_SMOOTH);
+
+    models_["spherehd"].model = glmReadOBJ(  "../Hatching/src/models/Sphere_highpoly.obj"  );
+    glmUnitize(models_["spherehd"].model);
+    models_["spherehd"].idx = glmList(models_["spherehd"].model,GLM_SMOOTH);
+
+    models_["conehd"].model = glmReadOBJ(  "../Hatching/src/models/Cone2_highpoly.obj"  );
+    glmUnitize(models_["conehd"].model);
+    models_["conehd"].idx = glmList(models_["conehd"].model,GLM_SMOOTH);
+
+    models_["mug"].model = glmReadOBJ(  "../Hatching/src/models/Mug.obj"  );
+    glmUnitize(models_["mug"].model);
+    models_["mug"].idx = glmList(models_["mug"].model,GLM_SMOOTH);
+
+    models_["torushd"].model = glmReadOBJ(  "../Hatching/src/models/Torus_highpoly.obj"  );
+    glmUnitize(models_["torushd"].model);
+    models_["torushd"].idx = glmList(models_["torushd"].model,GLM_SMOOTH);
 
 
 }
