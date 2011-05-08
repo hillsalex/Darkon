@@ -1402,7 +1402,10 @@ GLMmodel* glmReadOBJ(char* filename,mycallback *call){
                                        3 * (model->numvertices + 1));
     model->triangles = (GLMtriangle*)malloc(sizeof(GLMtriangle) *
                                             model->numtriangles);
-    model->curvatures = (GLfloat*)malloc(sizeof(GLfloat) * 3 * (model->numvertices+1));
+    model->vertMaxCurvatures = (GLfloat*)malloc(sizeof(GLfloat) * 3 * (model->numvertices+1));
+    model->vertMinCurvatures = (GLfloat*)malloc(sizeof(GLfloat) * 3 * (model->numvertices+1));
+    model->vertCurvatures = (GLfloat*)malloc(sizeof(GLfloat) * 3 * (model->numvertices+1));
+    model->triCurvatures = (GLfloat*)malloc(sizeof(GLfloat)*model->numtriangles*3);
     if (model->numnormals) {
         model->normals = (GLfloat*)malloc(sizeof(GLfloat) *
                                           3 * (model->numnormals + 1));

@@ -2,6 +2,7 @@
 #define MODELSHOT_H
 #include <shot.h>
 #include "meshoperator.h"
+#include "math/CS123Algebra.h"
 
 class modelShot : public Shot
 {
@@ -16,10 +17,13 @@ public:
 
     //called every frame before draw.
     void update();
-
-    MeshOperator* m_operator;
     //draw!
     void draw();
+protected:
+
+    void renderNormal(const Vector4 &vertex, const Vector4 &direction);
+            MeshOperator* m_operator;
+
 };
 
 #endif // MODELSHOT_H
