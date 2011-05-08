@@ -54,7 +54,7 @@ void MPSandbox::begin()
         patr.end();
     img.save("/home/mprice/Desktop/Patch/LappedUtiloutput.png","PNG");*/
 
-    PatchVert a,b,c;
+    /*PatchVert a,b,c;
     a.pos.x = 0;
     a.pos.y = 0;
     a.pos.z = 0;
@@ -69,7 +69,7 @@ void MPSandbox::begin()
     c.pos.y = 3;
     c.pos.z = 0;
     vec2<float> g = lu->estimateUV(&a,&b,&c);
-    cout<<"<"<<g.x<<","<<g.y<<"> == <3,3> ?"<<endl;
+    cout<<"<"<<g.x<<","<<g.y<<"> == <3,3> ?"<<endl;*/
 
 }
 
