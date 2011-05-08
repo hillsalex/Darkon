@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <math/CS123Algebra.h>
 #include <glm.h>
+#include <QHash>
 using std::cout;
 using std::endl;
 
@@ -158,16 +159,32 @@ struct PatchVert
     PatchVert(){tris = new QList<PatchTri*>();} 
 };
 
-
+struct PatchEdge;
 struct PatchTri
 {
-    //the indices of the patchverts we made
+    //the patchverts we made
     PatchVert* v0;
     PatchVert* v1;
     PatchVert* v2;
+    //edges
+    PatchEdge* e01;
+    PatchEdge* e12;
+    PatchEdge* e20;
+
     //the GLM triangle (maybe some redundant information but w/e)
     _GLMtriangle* GLMtri;
     Vector4 tangent;
+
+    PatchVert* otherVert(PatchVert* _A, PatchVert* _B)
+    {
+        if(v0!= _A && v0!= _B)
+            return v0;
+        if(v1!= _A && v1!= _B)
+            return v1;
+        if(v2!= _A && v2!= _B)
+            return v2;
+        return NULL;
+    }
 };
 
 struct PatchEdge
@@ -184,8 +201,9 @@ struct PatchEdge
 
 struct LappedPatch
 {
-    PatchTri seed;
-    QList<PatchTri*> tris;
+    PatchTri* seed;
+    QList<PatchTri*>* tris;
+    QHash<PatchVert*, vec2<float> >* uvs;
 };
 
 
