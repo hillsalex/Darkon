@@ -22,7 +22,7 @@ int LappedUtils::ccw(vert2d* p1,vert2d* p2,vert2d* p3)
 }
 
 //Assuming A and B have correct UV coords and world space coords, return an estimate of C's UV coords
-vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C)
+vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst)
 {
     Vector4 AC(C->pos.x - A->pos.x, C->pos.y - A->pos.y, C->pos.z - A->pos.z,0);
     Vector4 AB(B->pos.x - A->pos.x, B->pos.y - A->pos.y, B->pos.z - A->pos.z,0);
@@ -31,22 +31,23 @@ vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C)
     float x = AC.dot(AB) / AB.getMagnitude2();
     float y = AC.dot(AB_r) / AB.getMagnitude2();
 
+    //these are UVS
     vec2<float> ABp,AB_rp;
-    ABp.x = B->s - A->s;
-    ABp.y = B->t - A->t;
+    ABp.x = Bst.x - Ast.x;
+    ABp.y = Bst.y - Ast.y;
     AB_rp.x = ABp.y;
     AB_rp.y = -ABp.x;
 
-    vec2<float> Ap,Bp,Cp;
-    Ap.x = A->s; Ap.y = A->t; Bp.x = B->s; Bp.y = B->t;
-    Cp = Ap + x*ABp + y*AB_rp;
+    vec2<float> Cp; //Ap,Bp
+   // Ap.x = Ast.x; Ap.y = Ast.y; Bp.x = B->s; Bp.y = B->t;
+    Cp = Ast + x*ABp + y*AB_rp;
 
     //cout<<"AB: "<<AB<<" AC: "<<AC<<" AB_r: "<<AB_r<<" ABp: "<<ABp<<" AB_rp: "<<AB_rp<<" x: "<<x<<" y: "<<y<<" Ap:"<<Ap<<" Bp: "<<Bp<<" Cp: "<<Cp<<endl;
     //cout<<"AC dot AB: "<<AC.dot(AB)<<" AB dot AC: "<<AB.dot(AC)<<" mag AB: "<<AB.getMagnitude()<<endl;
     return Cp;
 }
 
-void LappedUtils::assignSeedUV(PatchTri* seed)
+void LappedUtils::assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v1st, vec2<float> &v2st)
 {
     Vector4 A,B,C;
     A = seed->v0->pos;
@@ -75,12 +76,20 @@ void LappedUtils::assignSeedUV(PatchTri* seed)
     Ap = Ap*0.25/avgLen;
     Bp = Bp*0.25/avgLen;
     Cp = Cp*0.25/avgLen;
+    /*
     seed->v0->s = Ap.x;
     seed->v0->t = Ap.y;
     seed->v1->s = Bp.x;
     seed->v1->t = Bp.y;
     seed->v2->s = Cp.x;
     seed->v2->t = Cp.y;
+    */
+    v0st.x = Ap.x;
+    v0st.y = Ap.y;
+    v1st.x = Bp.x;
+    v1st.y = Bp.y;
+    v2st.x = Cp.x;
+    v2st.y = Cp.y;
 }
 
 polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
@@ -601,9 +610,15 @@ QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* poly
 
 
     //WHILE MESH IS NOT COVERED******
-    for(int wtf=0; wtf<3; wtf++)//***
+    for(int wtf=0; wtf<1; wtf++)//***
     {                           //***
     //WHILE MESH IS NOT COVERED******
+
+    //choose seed triangle, get center point
+        //for now, tangent equals vo--->v1  (should be curvature!)
+    //assign UVS to PatchTri s.t. centered at .5,.5 and tangent is aligned with texture //HOW???? NEED BITANGENT OR NO?  HOW TO DETERMINE SCALE?
+        //enqueue edges of triangle
+    PatchTri* seed = trisMade[rand()%model->numtriangles];
 
 
 
@@ -616,7 +631,7 @@ QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* poly
 
 
 
-   // PatchTri* seed = trisMade[rand()%model->numtriangles];
+
 
 
 }

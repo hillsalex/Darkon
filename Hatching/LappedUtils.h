@@ -144,16 +144,18 @@ struct polyHull
 struct PatchTri;
 struct PatchVert
 {
+    //the texture coordinates (we assign these)
+    float s,t;//really should be outside since vary perpatch
+
+
     //the index of the x coordinate in the GLM vertex array
     int GLMidx;
     //the coordinate values
     //float x,y,z;
     Vector4 pos;
-    //the texture coordinates (we assign these)
-    float s,t;
     //the triangles that contain this vertex
     QList<PatchTri*>* tris;
-    PatchVert(){tris = new QList<PatchTri*>();}
+    PatchVert(){tris = new QList<PatchTri*>();} 
 };
 
 
@@ -195,8 +197,8 @@ public:
     void printEdge(edge2d* e){cout<<"{("<<e->v1->x<<","<<e->v1->y<<") ("<<e->v2->x<<","<<e->v2->y<<")}"<<endl;}
     polyHull* getPolyHull(QImage* blob,int iterations);
     QList<LappedPatch>* generatePatches(GLMmodel* model, polyHull* polyhull);
-    vec2<float> estimateUV(PatchVert* A, PatchVert* B, PatchVert* C);
-    void assignSeedUV(PatchTri* seed);
+    vec2<float> estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst);
+    void assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v1st, vec2<float> &v2st);
 
 };
 
