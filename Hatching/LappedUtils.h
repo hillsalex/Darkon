@@ -64,6 +64,28 @@ struct vert2d
     }
 };
 
+/*
+bool lineIntersect(double x1, double y1, double x2, double y2, double xa, double ya, double xb, double yb)
+{
+    {
+        double A = y2-y1;
+        double B = x1-x2;
+        double C = x1*y2-x2*y1;
+        bool agt = (A*xa+B*ya)>C;
+        bool bgt = (A*xb+B*yb)>C;
+        if (!(agt ^ bgt))
+            return false;
+        A = yb-ya;
+        B = xa-xb;
+        C = xa*yb-xb*ya;
+        agt = (A*x1+B*y1)>C;
+        bgt = (A*x2+B*y2)>C;
+        if (!(agt ^ bgt))
+            return false;
+    }
+    return true;
+}*/
+
 struct polyHull
 {
     QList<vert2d*>* verts;
@@ -74,6 +96,32 @@ struct polyHull
     //returns true if the given segment intersects the given edge
     bool isectEdge(edge2d* e, float x0, float y0, float x1, float y1)
     {  // cout<<"isectEdge "<<x0<<","<<y0<<" "<<x1<<","<<y1<<" edge2d: "<<e->v1->x<<","<<e->v1->y <<") (" << e->v2->x << "," << e->v2->y << ")" << endl;
+        {
+            double y2 = y1;
+            double x2 = x1;
+            double x1 = x0;
+            double y1 = y0;
+            double xa = e->v1->x;
+            double ya = e->v1->y;
+            double xb = e->v2->x;
+            double yb = e->v2->y;
+            double A = y2-y1;
+            double B = x1-x2;
+            double C = x1*y2-x2*y1;
+            bool agt = (A*xa+B*ya)>C;
+            bool bgt = (A*xb+B*yb)>C;
+            if (!(agt ^ bgt))
+                return false;
+            A = yb-ya;
+            B = xa-xb;
+            C = xa*yb-xb*ya;
+            agt = (A*x1+B*y1)>C;
+            bgt = (A*x2+B*y2)>C;
+            if (!(agt ^ bgt))
+                return false;
+        }
+        return true;
+        /*
         if(x0==x1 && e->v1->x == e->v2->x)return false;//both vertical
         if(y0==y1 && e->v1->y == e->v2->y)return false;//both horizontal
         int isecx,isecy;
@@ -110,7 +158,7 @@ struct polyHull
         if(x0<=x1){xmin=x0; xmax=x1;}else{xmin=x1; xmax=x0;}
         if(y0<=y1){ymin=y0; ymax=y1;}else{ymin=y1; ymax=y0;}
         if(isecx<xmin || isecx>xmax || isecy<ymin || isecy>ymax)return false;
-        return true;
+        return true;*/
     }
     //returns true if the given segment intersects any edge in the hull
     bool isectAnyEdge(float x0, float y0, float x1, float y1)
@@ -239,12 +287,16 @@ public:
     void printEdge(edge2d* e){cout<<"{("<<e->v1->x<<","<<e->v1->y<<") ("<<e->v2->x<<","<<e->v2->y<<")}"<<endl;}
     polyHull* getPolyHull(QImage* blob,int iterations);
     QList<LappedPatch*>* generatePatches(GLMmodel* model, polyHull* polyhull);
-    vec2<float> estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst, vec2<float> BADGUY);
+    vec2<float> estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float>* Ast, vec2<float>* Bst, vec2<float> *BADGUY);
     void assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v1st, vec2<float> &v2st);
     void vizualizePatch(LappedPatch* patch, QImage* img);
     void drawEdgeFromUV(QImage* img, QPainter* patr, vec2<float> v0, vec2<float>v1);
     void printPatchTri2d(PatchTri* pt);
     void printPatchTri3d(PatchTri* pt);
+    int circle_circle_intersection(double x0, double y0, double r0,
+                                   double x1, double y1, double r1,
+                                   double *xi, double *yi,
+                                   double *xi_prime, double *yi_prime);
 };
 
 #endif // LAPPEDUTILS_H

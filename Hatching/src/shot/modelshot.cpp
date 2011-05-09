@@ -5,7 +5,7 @@
 using std::cout;
 using std::endl;
 
-QString modelstring = "torushd";
+QString modelstring = "bird";
 
 
 modelShot::modelShot(DrawEngine* parent,QHash<QString, QGLShaderProgram *>* shad, QHash<QString, GLuint>* tex, QHash<QString, Model>* mod) : Shot(parent,shad,tex,mod)
@@ -20,16 +20,19 @@ modelShot::~modelShot()
 
 }
 
-void modelShot::renderNormal(const Vector4 &vertex, const Vector4 &direction)
+void modelShot::renderNormal(const Vector4 &vertex, const Vector4 &direction,bool drawTri)
 {
+    float scaleFactor = 1/100.0;
     Vector4 normalDirection = direction.getNormalized();
 
     // Draw a normal with a fixed length of 0.15
     glBegin(GL_LINES);
     glVertex3dv(vertex.data);
-    glVertex3dv((vertex + normalDirection * 0.05).data);
+    glVertex3dv((vertex + normalDirection * scaleFactor).data);
     glEnd();
 
+    if(drawTri)
+    {
     // End the normal with an axis-aligned billboarded triangle (billboarding means always rotating
     // to face the camera, and axis-aligned means it can only rotate around the axis of the normal)
     Vector4 eye;
@@ -39,13 +42,14 @@ void modelShot::renderNormal(const Vector4 &vertex, const Vector4 &direction)
     Vector4 triangleVector = direction.cross(eye - vertex);
     if (triangleVector.getMagnitude2() > 1.0e-6f)
     {
-        triangleVector = triangleVector.getNormalized() * 0.01;
+        triangleVector = triangleVector.getNormalized() * scaleFactor/10;
         glBegin(GL_TRIANGLES);
-        glVertex3dv((vertex + normalDirection * 0.1).data);
-        glVertex3dv((vertex + normalDirection * 0.05 - triangleVector).data);
-        glVertex3dv((vertex + normalDirection * 0.05 + triangleVector).data);
+        glVertex3dv((vertex + normalDirection * scaleFactor).data);
+        glVertex3dv((vertex + normalDirection * scaleFactor - triangleVector).data);
+        glVertex3dv((vertex + normalDirection * scaleFactor + triangleVector).data);
         glEnd();
     }
+}
 }
 
 
@@ -55,8 +59,10 @@ void modelShot::renderNormal(const Vector4 &vertex, const Vector4 &direction)
 //(gl state)
 void modelShot::begin()
 {
+    cout << "Begin" << endl;
     GLMmodel* model = models_->value(modelstring).model;
     m_operator->calculateCurvatures(model);
+    cout << "Curvatures!" << endl;
 /*
 
     QList<QString> keys = models_->keys();
@@ -88,10 +94,11 @@ void modelShot::draw()
     glMatrixMode(GL_MODELVIEW);
     glActiveTexture(GL_TEXTURE0);
     QList<QString> keys = models_->keys();
-    bool drawVertCurvatures = true;
-    bool drawVertMinCurvatures = true;
+    bool drawVertCurvatures = false;
+    bool drawVertMinCurvatures = false;
     bool drawFaceCurvatures = true;
-    float scaleFactor = 1/3.0;
+    bool drawTris = false;
+    float scaleFactor = 1/20.0;
 
 
 
@@ -116,7 +123,7 @@ void modelShot::draw()
             dir.y = curvatures[i*3+1];
             dir.z = curvatures[i*3+2];
             glColor3f(1.0,0,0);
-            renderNormal(pos,dir);
+            renderNormal(pos,dir,drawTris);
             glColor3f(1,1,1);
             //glVertex3f(vertices[i*3], vertices[i*3+1],vertices[i*3+2]); // origin of the line
             //glVertex3f(vertices[i*3]+curvatures[i*3]*scaleFactor, vertices[i*3+1]+curvatures[i*3+1]*scaleFactor,vertices[i*3+2]+curvatures[i*3+2]*scaleFactor); // ending point of the line
@@ -137,7 +144,7 @@ void modelShot::draw()
             dir.y = mincurvatures[i*3+1];
             dir.z = mincurvatures[i*3+2];
             glColor3f(0,0,1.0);
-            renderNormal(pos,dir);
+            renderNormal(pos,dir,drawTris);
             glColor3f(1,1,1);
             //glVertex3f(vertices[i*3], vertices[i*3+1],vertices[i*3+2]); // origin of the line
             //glVertex3f(vertices[i*3]+curvatures[i*3]*scaleFactor, vertices[i*3+1]+curvatures[i*3+1]*scaleFactor,vertices[i*3+2]+curvatures[i*3+2]*scaleFactor); // ending point of the line
@@ -184,7 +191,7 @@ void modelShot::draw()
                 dir.y = triCurvatures[i*3+1];
                 dir.z = triCurvatures[i*3+2];
                 glColor3f(0,1,0);
-                renderNormal(pos,dir);
+                renderNormal(pos,dir,drawTris);
                 glColor3f(1,1,1);
 
                 //glVertex3f(x, y,z); // origin of the line

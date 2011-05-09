@@ -27,6 +27,10 @@
 #include <GL/glext.h>
 #include "glm.h"
 #include "targa.h"
+#include <iostream>
+
+using std::cout;
+using std::endl;
 
 
 #ifndef GL_BGR
@@ -931,6 +935,7 @@ GLfloat glmUnitize(GLMmodel* model){
         model->vertices[3 * i + 0] *= scale;
         model->vertices[3 * i + 1] *= scale;
         model->vertices[3 * i + 2] *= scale;
+        //cout << model->vertices[3*i+0] << ',' <<model->vertices[3*i+1] << ',' <<model->vertices[3*i+2] << ',' << endl;
     }
     return scale;
 }

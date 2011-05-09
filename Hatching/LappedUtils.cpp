@@ -22,10 +22,75 @@ int LappedUtils::ccw(vert2d* p1,vert2d* p2,vert2d* p3)
         return -1;
 }
 
+
+
 //Assuming A and B have correct UV coords and world space coords, return an estimate of C's UV coords
-vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst, vec2<float> BADGUY)
+vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> *_Ast, vec2<float> *_Bst, vec2<float> *_Otherst)
 {
 
+
+    vec2<float> Ast,Bst,Otherst;
+    Ast.x = _Ast->x;
+    Ast.y = _Ast->y;
+    Bst.x = _Bst->x;
+    Bst.y = _Bst->y;
+    Otherst.x = _Otherst->x;
+    Otherst.y = _Otherst->y;
+
+
+    vec2<float> abst = Bst-Ast;
+    double ABlengthp = sqrt(abst.x*abst.x+abst.y*abst.y);
+    double ABlength = (B->pos-A->pos).getMagnitude();
+    double AClength = (C->pos-A->pos).getMagnitude();
+    double BClength = (C->pos-B->pos).getMagnitude();
+    double scaleFactor = ABlengthp/ABlength;
+    double BClengthp = BClength*scaleFactor;
+    double AClengthp = AClength*scaleFactor;
+
+    double *_f1x,*_f1y,*_f2x,*_f2y;
+    _f1x = new double;
+    _f1y = new double;
+    _f2x = new double;
+    _f2y = new double;
+    int f = circle_circle_intersection(_Ast->x,_Ast->y,AClengthp,_Bst->x,_Bst->y,BClengthp,_f1x,_f1y,_f2x,_f2y);
+    vec2<float> f1 = vec2<float>(*_f1x,*_f1y);
+    vec2<float> f2 = vec2<float>(*_f2x,*_f2y);
+
+
+    /*double lawofcosines = (BClengthp*BClengthp)/(AClengthp*AClengthp+ABlengthp*ABlengthp-2*AClengthp*ABlengthp);
+    double theta = acos((BClengthp*BClengthp)/(AClengthp*AClengthp+ABlengthp*ABlengthp-2*AClengthp*ABlengthp));
+    double endbase = AClengthp*cos(theta);
+    double endheight = AClengthp*sin(theta);
+    //cout<<"ABlengthp: "<<ABlengthp<<" ABlength: "<<ABlength<<" AClength: "<<AClength<<" BClength: "<<BClength<<" scaleFactor: "<<scaleFactor<<""
+    vec2<float>pabst = abst/ABlengthp;
+    vec2<float>pabstr1 = vec2<float>(-pabst.y,pabst.x);
+    vec2<float>pabstr2 = -pabstr1;
+    vec2<float>final1 = pabst*endbase+abst;
+    vec2<float>final2 = final1;
+    final1 = final1 + pabstr1*endheight;
+    final2 = final2 + pabstr2*endheight;
+    */
+    vec2<float>d1,d2;
+    d1.x = Otherst.x- (*_f1x);
+    d1.y = Otherst.y- (*_f1y);
+    d2.x = Otherst.x- (*_f2x);
+    d2.y = Otherst.y- (*_f2y);
+
+    // cout << "RESULTS: " << endl << final1 << endl << final2 << endl;
+
+    // cout << "ENDING" << endl;
+
+
+
+    if ((d1.x*d1.x+d1.y*d1.y)>(d2.x*d2.x+d2.y*d2.y))
+        return vec2<float>(*_f1x,*_f1y);
+    else return vec2<float>(*_f2x,*_f2y);
+
+
+
+
+
+    /*
 
     Vector4 AC = C->pos - A->pos;
     Vector4 AB = B->pos - A->pos;
@@ -50,10 +115,12 @@ vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, ve
 
 
 
+
+
     AC = C->pos - B->pos;
     AB = A->pos - B->pos;
 
-    AB_r = AB * getRotMat(Vector4(A->pos.x,A->pos.y,A->pos.z,0),AC.cross(AB),M_PI/2.0);
+    AB_r = AB * getRotMat(Vector4(B->pos.x,B->pos.y,B->pos.z,0),AC.cross(AB),M_PI/2.0);
     x = AC.dot(AB) / AB.getMagnitude2();
     y = AC.dot(AB_r) / AB.getMagnitude2();
 
@@ -73,13 +140,16 @@ vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, ve
     vec2<float>CP1 = Cp-Otherst;
     vec2<float>CP2 = Cp2-Otherst;
 
+    return Cp2;
+
     if ((CP1.x*CP1.x+CP1.y*CP1.y)>(CP2.x*CP2.x+CP2.y*CP2.y))
-        return Cp;
-    else
         return Cp2;
+    else
+        return Cp;
 
     //cout<<"AB: "<<AB<<" AC: "<<AC<<" AB_r: "<<AB_r<<" ABp: "<<ABp<<" AB_rp: "<<AB_rp<<" x: "<<x<<" y: "<<y<<" Ap:"<<Ap<<" Bp: "<<Bp<<" Cp: "<<Cp<<endl;
     //cout<<"AC dot AB: "<<AC.dot(AB)<<" AB dot AC: "<<AB.dot(AC)<<" mag AB: "<<AB.getMagnitude()<<endl;
+        */
 }
 
 
@@ -114,11 +184,11 @@ void LappedUtils::assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v
     Vector4 norm = ((Bp-Ap).cross(Cp-Ap)).getNormalized();
     printVector4(norm);
     double angle = acos(norm.dot(Vector4(0,0,1.0,0)));
-    cout << "angle between normal and plane z=1: " << angle << endl;
+    //cout << "angle between normal and plane z=1: " << angle << endl;
     if (norm.cross(Vector4(0,0,1,0)).getMagnitude()>0.00001)
     {
         //cout << (norm.cross(Vector4(0,0,1,0))).getMagnitude() << endl;
-        cout << norm.cross(Vector4(0,0,1,0)) << endl;
+        //cout << norm.cross(Vector4(0,0,1,0)) << endl;
         Matrix4x4 rotMat = getRotMat(Vector4(0,0,0,0),norm.cross(Vector4(0,0,1.0,0)).getNormalized(),angle);
         Ap.w = 1;
         Bp.w = 1;
@@ -147,14 +217,14 @@ void LappedUtils::assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v
     seed->tangent = Tp;
     Tp.normalize();
     double tanAngle = acos(Vector4(0,1,0,0).dot(Tp));
-    /*
+
     Matrix4x4 tanMat = getRotMat(Vector4(0,0,0,0),Vector4(0,1,0,0).cross(Tp),tanAngle);
     Ap = tanMat*Ap;
     Bp = tanMat*Bp;
     Cp = tanMat*Cp;
     Ap.w = 1;
     Bp.w = 1;
-    Cp.w = 1;*/
+    Cp.w = 1;
     transMat = getTransMat(Vector4(.5,.5,0,0));
     Ap = transMat*Ap;
     Bp = transMat*Bp;
@@ -470,7 +540,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
                     delete C;
                 }
 
-                if(isecx>1 && isecx<img.width()-1 && isecy>1 && isecy<img.width()-1)
+                else//if(isecx>1 && isecx<img.width()-1 && isecy>1 && isecy<img.width()-1)
                 {
                     //concave-convex \/\  OR
                     //both angles concave \__/
@@ -635,7 +705,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
         pt->tangent.x = model->triCurvatures[i*3];
         pt->tangent.y = model->triCurvatures[i*3+1];
         pt->tangent.z = model->triCurvatures[i*3+2];
-        pt->tangent.w = model->triCurvatures[1];
+        pt->tangent.w = 1;
 
         //make/find PatchVerts for new triangle
         for(int vi=0;vi<3;vi++)
@@ -733,41 +803,41 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
         //assign UVS to PatchTri s.t. centered at .5,.5 and tangent is aligned with texture //HOW???? NEED BITANGENT OR NO?  HOW TO DETERMINE SCALE?
         //enqueue edges of triangle
 
-   //DONT DELETE THESE THINGS!
-    //hash table of uvs for this specific patch!
-    QHash<PatchVert*,vec2<float> >* UVs = new QHash<PatchVert*, vec2<float> >();
-    //list of Tris for this specific patch!
-    QList<PatchTri*>* PTris = new QList<PatchTri*>();
-    //seed for this specific patch!
-    PatchTri* seed = trisMade[rand()%model->numtriangles];
+        //DONT DELETE THESE THINGS!
+        //hash table of uvs for this specific patch!
+        QHash<PatchVert*,vec2<float> >* UVs = new QHash<PatchVert*, vec2<float> >();
+        //list of Tris for this specific patch!
+        QList<PatchTri*>* PTris = new QList<PatchTri*>();
+        //seed for this specific patch!
+        PatchTri* seed = trisMade[0];//rand()%model->numtriangles];
 
-    vec2<float> seedUV0, seedUV1, seedUV2;
-    assignSeedUV(seed, seedUV0, seedUV1, seedUV2);
-    UVs->insert(seed->v0,seedUV0);
-    UVs->insert(seed->v1,seedUV1);
-    UVs->insert(seed->v2,seedUV2);
+        vec2<float> seedUV0, seedUV1, seedUV2;
+        assignSeedUV(seed, seedUV0, seedUV1, seedUV2);
+        UVs->insert(seed->v0,seedUV0);
+        UVs->insert(seed->v1,seedUV1);
+        UVs->insert(seed->v2,seedUV2);
 
-    QQueue<PatchEdge*>* edgeQ = new QQueue<PatchEdge*>();
-    edgeQ->enqueue(seed->e01);
-    edgeQ->enqueue(seed->e12);
-    edgeQ->enqueue(seed->e20);
+        QQueue<PatchEdge*>* edgeQ = new QQueue<PatchEdge*>();
+        edgeQ->enqueue(seed->e01);
+        edgeQ->enqueue(seed->e12);
+        edgeQ->enqueue(seed->e20);
 
-    //make visitedSets of edges, verts, tris
-    //mark everything from seed as visited
-    QSet<PatchVert*>* vertsInPatch = new QSet<PatchVert*>();
-    QSet<PatchEdge*>* edgesInPatch = new QSet<PatchEdge*>();
-    QSet<PatchTri*>* trisInPatch = new QSet<PatchTri*>();
-    vertsInPatch->insert(seed->v0);
-    vertsInPatch->insert(seed->v1);
-    vertsInPatch->insert(seed->v2);
-    edgesInPatch->insert(seed->e01);
-    edgesInPatch->insert(seed->e12);
-    edgesInPatch->insert(seed->e20);
-    trisInPatch->insert(seed);
-    PTris->append(seed);
-    cout<<"PTris size init: "<<PTris->size()<<endl;
+        //make visitedSets of edges, verts, tris
+        //mark everything from seed as visited
+        QSet<PatchVert*>* vertsInPatch = new QSet<PatchVert*>();
+        QSet<PatchEdge*>* edgesInPatch = new QSet<PatchEdge*>();
+        QSet<PatchTri*>* trisInPatch = new QSet<PatchTri*>();
+        vertsInPatch->insert(seed->v0);
+        vertsInPatch->insert(seed->v1);
+        vertsInPatch->insert(seed->v2);
+        edgesInPatch->insert(seed->e01);
+        edgesInPatch->insert(seed->e12);
+        edgesInPatch->insert(seed->e20);
+        trisInPatch->insert(seed);
+        PTris->append(seed);
+        //cout<<"PTris size init: "<<PTris->size()<<endl;
 
-    //while Q not empty
+        //while Q not empty
         //dequeue edge e
         //find other triangle in edge
         //if tri is not in patch
@@ -784,11 +854,11 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
         //take average of those guys as UV for new vert
         //then add triangle like above: enq new edges, mark any new edges, vert, tri as visited
         //patch is done, delete visitedSets, continue to next patch
-    int fucktris = 0;
-    while(!edgeQ->isEmpty())// && fucktris < 3)
-    {
-        fucktris++;
-        PatchEdge* e = edgeQ->dequeue();
+        int fucktris = 0;
+        while((!edgeQ->isEmpty()))// && fucktris < 3)
+        {
+            fucktris++;
+            PatchEdge* e = edgeQ->dequeue();
             PatchTri* otherTri;
             if(trisInPatch->contains(e->t1))
             {
@@ -798,8 +868,8 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                 }
                 else
                 {
-                 cout<<"both tris already in patch or edge only has one tri"<<endl;                 
-                 continue;
+                    //cout<<"both tris already in patch or edge only has one tri"<<endl;
+                    continue;
                 }
             }
             else if(e->ntris>=1)
@@ -808,7 +878,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
             }
             else
             {
-                cout<<"edge somehow has no triangles"<<endl;
+               // cout<<"edge somehow has no triangles"<<endl;
                 continue;
             }
 
@@ -848,7 +918,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                         //take average of those guys as UV for new vert
                         //then add triangle like above: enq new edges, mark any new edges, vert, tri as visited
 
-                        vec2<float> sumUVs;
+                        vec2<float> sumUVs = vec2<float>(0,0);
                         int numUVs=0;
                         for(int ti=0; ti<newvert->tris->size(); ti++)
                         {
@@ -880,36 +950,57 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                                 continue;
                             numUVs++;
                             vec2<float> badguy = UVs->value( mappedE->otherTri(curtri)->otherVert(mappedE->v0,mappedE->v1));
-                            sumUVs = sumUVs + estimateUV(_B,_A,newvert, UVs->value(_B), UVs->value(_A));
+                            vec2<float>* Ast = new vec2<float>(); Ast->x = UVs->value(_A).x; Ast->y = UVs->value(_A).y;
+                            vec2<float>* Bst = new vec2<float>(); Bst->x = UVs->value(_B).x; Bst->y = UVs->value(_B).y;
+                            sumUVs = sumUVs + estimateUV(_A,_B,newvert, Ast, Bst,&badguy);
                         }
                         //sumUVs is actually now the UVs we want
-                        sumUVs = sumUVs / (1.0+numUVs);
+                        sumUVs = sumUVs / (numUVs);
                         //add all the crap
                         UVs->insert(newvert,sumUVs);
                         vertsInPatch->insert(newvert);
                         trisInPatch->insert(otherTri);
                         if(!edgesInPatch->contains(otherTri->e01))
-                            {edgesInPatch->insert(otherTri->e01);
-                             edgeQ->enqueue(otherTri->e01);}
+                        {edgesInPatch->insert(otherTri->e01);
+                            edgeQ->enqueue(otherTri->e01);}
                         if(!edgesInPatch->contains(otherTri->e12))
-                            {edgesInPatch->insert(otherTri->e12);
-                             edgeQ->enqueue(otherTri->e12);}
+                        {edgesInPatch->insert(otherTri->e12);
+                            edgeQ->enqueue(otherTri->e12);}
                         if(!edgesInPatch->contains(otherTri->e20))
                         {edgesInPatch->insert(otherTri->e20);
-                         edgeQ->enqueue(otherTri->e20);}
+                            edgeQ->enqueue(otherTri->e20);}
                         PTris->append(otherTri);
+
+                        double size = 500;
+                        QImage* testOut = new QImage((int)size,(int)size,QImage::Format_ARGB32);
+                        testOut->fill(1);
+                        QPainter painter(testOut);
+                        painter.setPen(Qt::red);
+                        painter.setBrush(Qt::red);
+                        for (int tri=0;tri<PTris->size();tri++)
+                        {
+                            PatchTri* pt = PTris->at(tri);
+                            painter.drawLine(UVs->value(pt->v0).x*size , UVs->value(pt->v0).y*size , UVs->value(pt->v1).x*size, UVs->value(pt->v1).y*size);
+                            painter.drawLine(UVs->value(pt->v1).x*size , UVs->value(pt->v1).y*size , UVs->value(pt->v2).x*size , UVs->value(pt->v2).y*size);
+                            painter.drawLine(UVs->value(pt->v0).x*size,UVs->value(pt->v0).y*size,UVs->value(pt->v2).x*size,UVs->value(pt->v2).y*size);
+                        }
+                        int iii = 0;
+                        testOut->save("TESTTHIS.png");
+                        int iiiii = 0;
+
                     }
                 }
             }//endif isectHull
+
         }//endwhile Q!Empty
 
         //PTris, UVs, seed should be sufficient to define patch!
         LappedPatch* newPatch = new LappedPatch();
         newPatch->tris = PTris;
-        for (int ptt=0;ptt<PTris->size();ptt++)
+        /*for (int ptt=0;ptt<PTris->size();ptt++)
         {
             printPatchTri3d(newPatch->tris->at(ptt));
-        }
+        }*/
         //cout<<"PTris size end: "<<PTris->size()<<endl;
         newPatch->seed = seed;
         newPatch->uvs = UVs;
@@ -967,4 +1058,66 @@ void LappedUtils::printPatchTri2d(PatchTri* pt)
 void LappedUtils::printPatchTri3d(PatchTri* pt)
 {
     cout<<"3dTri: "<<pt->v0->pos<<" "<<pt->v1->pos<<" "<<pt->v2->pos<<endl;
+}
+
+int LappedUtils::circle_circle_intersection(double x0, double y0, double r0,
+                                            double x1, double y1, double r1,
+                                            double *xi, double *yi,
+                                            double *xi_prime, double *yi_prime)
+{
+    double a, dx, dy, d, h, rx, ry;
+    double x2, y2;
+
+    /* dx and dy are the vertical and horizontal distances between
+   * the circle centers.
+   */
+    dx = x1 - x0;
+    dy = y1 - y0;
+
+    /* Determine the straight-line distance between the centers. */
+    //d = sqrt((dy*dy) + (dx*dx));
+    d = hypot(dx,dy); // Suggested by Keith Briggs
+
+    /* Check for solvability. */
+    if (d > (r0 + r1))
+    {
+        /* no solution. circles do not intersect. */
+        return 0;
+    }
+    if (d < fabs(r0 - r1))
+    {
+        /* no solution. one circle is contained in the other */
+        return 0;
+    }
+
+    /* 'point 2' is the point where the line through the circle
+   * intersection points crosses the line between the circle
+   * centers.
+   */
+
+    /* Determine the distance from point 0 to point 2. */
+    a = ((r0*r0) - (r1*r1) + (d*d)) / (2.0 * d) ;
+
+    /* Determine the coordinates of point 2. */
+    x2 = x0 + (dx * a/d);
+    y2 = y0 + (dy * a/d);
+
+    /* Determine the distance from point 2 to either of the
+   * intersection points.
+   */
+    h = sqrt((r0*r0) - (a*a));
+
+    /* Now determine the offsets of the intersection points from
+   * point 2.
+   */
+    rx = -dy * (h/d);
+    ry = dx * (h/d);
+
+    /* Determine the absolute intersection points. */
+    *xi = x2 + rx;
+    *xi_prime = x2 - rx;
+    *yi = y2 + ry;
+    *yi_prime = y2 - ry;
+
+    return 1;
 }

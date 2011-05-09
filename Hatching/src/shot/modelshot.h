@@ -21,7 +21,7 @@ public:
     void draw();
 protected:
 
-    void renderNormal(const Vector4 &vertex, const Vector4 &direction);
+    void renderNormal(const Vector4 &vertex, const Vector4 &direction,bool tris);
             MeshOperator* m_operator;
 
 };

@@ -185,6 +185,12 @@ void DrawEngine::load_models() {
     glmUnitize(models_["cube"].model);
     models_["cube"].idx = glmList(models_["cube"].model,GLM_SMOOTH);
 
+    models_["bird"].model = glmReadOBJ(  "../Hatching/src/models/Durbird.obj"  );
+    glmUnitize(models_["bird"].model);
+    glmFacetNormals(models_["bird"].model);
+    glmVertexNormals(models_["bird"].model,90);
+    models_["bird"].idx = glmList(models_["bird"].model,GLM_SMOOTH);
+
     //models_["hourglass"].model = glmReadOBJ(  "../Hatching/src/models/hourglass.obj"  );
     //glmUnitize(models_["hourglass"].model);
     //models_["hourglass"].idx = glmList(models_["hourglass"].model,GLM_SMOOTH);

@@ -56,29 +56,9 @@ SparseMatrix* vec3toMat(vec3<float> v)
     m->setValue(2,0,v.z);
 }
 
-bool lineIntersect(double x1, double y1, double x2, double y2, double xa, double ya, double xb, double yb)
-{
-    {
-        double A = y2-y1;
-        double B = x1-x2;
-        double C = x1*y2-x2*y1;
-        bool agt = (A*xa+B*ya)>C;
-        bool bgt = (A*xb+B*yb)>C;
-        if (!(agt ^ bgt))
-            return false;
-        A = yb-ya;
-        B = xa-xb;
-        C = xa*yb-xb*ya;
-        agt = (A*x1+B*y1)>C;
-        bgt = (A*x2+B*y2)>C;
-        if (!(agt ^ bgt))
-            return false;
-    }
-    return true;
-}
-
 void MeshOperator::TestPatch()
 {
+
     float size = 500;
     GLMtriangle t;
     PatchTri patch;
@@ -88,17 +68,17 @@ void MeshOperator::TestPatch()
 
     patch.v0->pos.x=0;
     patch.v0->pos.y=0;
-    patch.v0->pos.z=0;
+    patch.v0->pos.z=0.17907;
     patch.v0->pos.w=0;
 
-    patch.v1->pos.x=10;
-    patch.v1->pos.y=0;
-    patch.v1->pos.z=0;
+    patch.v1->pos.x=0;
+    patch.v1->pos.y=0.17907;
+    patch.v1->pos.z=-0.97814;
     patch.v1->pos.w=0;
 
-    patch.v2->pos.x=10;
-    patch.v2->pos.y=-10;
-    patch.v2->pos.z=0;
+    patch.v2->pos.x=-.97814;
+    patch.v2->pos.y=-.18005;
+    patch.v2->pos.z=-.17907;
     patch.v2->pos.w=0;
 
     patch.tangent.x=0;
@@ -119,18 +99,18 @@ void MeshOperator::TestPatch()
     patch2.v2 = new PatchVert();
 
     patch2.v0->pos.x=0;
-    patch2.v0->pos.y=0;
-    patch2.v0->pos.z=0;
+    patch2.v0->pos.y=0.17907;
+    patch2.v0->pos.z=-0.97815;
     patch2.v0->pos.w=0;
 
-    patch2.v1->pos.x=10;
+    patch2.v1->pos.x=0;
     patch2.v1->pos.y=0;
-    patch2.v1->pos.z=0;
+    patch2.v1->pos.z=0.17907;
     patch2.v1->pos.w=0;
 
-    patch2.v2->pos.x=10;
-    patch2.v2->pos.y=10;
-    patch2.v2->pos.z=0;
+    patch2.v2->pos.x=-0.5;
+    patch2.v2->pos.y=.74999;
+    patch2.v2->pos.z=-.10139;
     patch2.v2->pos.w=0;
 
     patch2.tangent.x=0;
@@ -138,7 +118,7 @@ void MeshOperator::TestPatch()
     patch2.tangent.z=0;
     patch2.tangent.w=1;
 
-    vec2<float> v4 = lutil.estimateUV(patch2.v1,patch2.v0,patch.v2,v2,v1);
+    vec2<float> v4 = lutil.estimateUV(patch2.v0,patch2.v1,patch2.v2,&v2,&v1,&v3);
 
     QImage* testOut = new QImage((int)size,(int)size,QImage::Format_ARGB32);
     testOut->fill(1);
@@ -223,6 +203,7 @@ void MeshOperator::calculateCurvatures(GLMmodel* model)
 
         vec3<float> normal; //Normal of current index
         vec3<float> vert; //Position of current vertex
+
         normal.x = model->normals[normalIndex*3];
         normal.y = model->normals[normalIndex*3+1];
         normal.z = model->normals[normalIndex*3+2];
@@ -353,8 +334,9 @@ void MeshOperator::calculateCurvatures(GLMmodel* model)
 
         else
         {
-            if (fabs(curvature2.dot(curvature1))>0.9)
-            {
+            curvature=curvature1;
+            minCurvature=curvature2;
+            /*
                 if (curvature1.x > curvature2.x)
                 {
 
@@ -379,7 +361,7 @@ void MeshOperator::calculateCurvatures(GLMmodel* model)
                         }
                     }
                 }
-            }
+            }*/
         }
         curvature.normalize();
         curvature = curvature - normal * curvature.dot(normal);
@@ -394,6 +376,9 @@ void MeshOperator::calculateCurvatures(GLMmodel* model)
         model->vertMaxCurvatures[vertexIndex*3]=curvature.x;
         model->vertMaxCurvatures[vertexIndex*3+1]=curvature.y;
         model->vertMaxCurvatures[vertexIndex*3+2]=curvature.z;
+
+        //cout << curvature << endl;
+        //cout << minCurvature << endl;
 
         model->vertMinCurvatures[vertexIndex*3]=minCurvature.x;
         model->vertMinCurvatures[vertexIndex*3+1]=minCurvature.y;
@@ -492,6 +477,12 @@ void MeshOperator::calculateCurvatures(GLMmodel* model)
         model->triCurvatures[i*3+2]=c.z;
 
     }
+
+    for (int i=0;i<model->numvertices;i++)
+    {
+        //cout << model->vertices[3*i+0] << ',' <<model->vertices[3*i+1] << ',' <<model->vertices[3*i+2] << ',' << endl;
+    }
+    cout << "curavtures made" << endl;
 }
 
 
