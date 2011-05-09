@@ -91,19 +91,19 @@ void MeshOperator::TestPatch()
     patch.v0->pos.z=0;
     patch.v0->pos.w=0;
 
-    patch.v1->pos.x=-12;
-    patch.v1->pos.y=3;
-    patch.v1->pos.z=4;
+    patch.v1->pos.x=10;
+    patch.v1->pos.y=0;
+    patch.v1->pos.z=0;
     patch.v1->pos.w=0;
 
-    patch.v2->pos.x=7;
-    patch.v2->pos.y=8;
-    patch.v2->pos.z=-16;
+    patch.v2->pos.x=10;
+    patch.v2->pos.y=-10;
+    patch.v2->pos.z=0;
     patch.v2->pos.w=0;
 
-    patch.tangent.x=-.3691;
-    patch.tangent.y=-.7566;
-    patch.tangent.z=-.5398;
+    patch.tangent.x=0;
+    patch.tangent.y=1;
+    patch.tangent.z=0;
     patch.tangent.w=1;
 
     vec2<float> v1;
@@ -111,6 +111,34 @@ void MeshOperator::TestPatch()
     vec2<float> v3;
     LappedUtils lutil;
     lutil.assignSeedUV(&patch,v1,v2,v3);
+
+
+    PatchTri patch2;
+    patch2.v0 = new PatchVert();
+    patch2.v1 = new PatchVert();
+    patch2.v2 = new PatchVert();
+
+    patch2.v0->pos.x=0;
+    patch2.v0->pos.y=0;
+    patch2.v0->pos.z=0;
+    patch2.v0->pos.w=0;
+
+    patch2.v1->pos.x=10;
+    patch2.v1->pos.y=0;
+    patch2.v1->pos.z=0;
+    patch2.v1->pos.w=0;
+
+    patch2.v2->pos.x=10;
+    patch2.v2->pos.y=10;
+    patch2.v2->pos.z=0;
+    patch2.v2->pos.w=0;
+
+    patch2.tangent.x=0;
+    patch2.tangent.y=1;
+    patch2.tangent.z=0;
+    patch2.tangent.w=1;
+
+    vec2<float> v4 = lutil.estimateUV(patch2.v1,patch2.v0,patch.v2,v2,v1);
 
     QImage* testOut = new QImage((int)size,(int)size,QImage::Format_ARGB32);
     testOut->fill(1);
@@ -122,7 +150,6 @@ void MeshOperator::TestPatch()
     painter.drawLine(v1.x*size,v1.y*size,v3.x*size,v3.y*size);
 
 
-    vec2<float> v4 = lutil.estimateUV(patch.v1,patch.v0,patch.v2,v2,v1);
 
     painter.setPen(Qt::green);
     painter.setBrush(Qt::green);

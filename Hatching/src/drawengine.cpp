@@ -182,8 +182,12 @@ void DrawEngine::load_models() {
     models_["torushd"].idx = glmList(models_["torushd"].model,GLM_SMOOTH);
 
     models_["cube"].model = glmReadOBJ(  "../Hatching/src/models/cube.obj"  );
-    glmUnitize(models_["torushd"].model);
+    glmUnitize(models_["cube"].model);
     models_["cube"].idx = glmList(models_["cube"].model,GLM_SMOOTH);
+
+    //models_["hourglass"].model = glmReadOBJ(  "../Hatching/src/models/hourglass.obj"  );
+    //glmUnitize(models_["hourglass"].model);
+    //models_["hourglass"].idx = glmList(models_["hourglass"].model,GLM_SMOOTH);
 
 }
 /**
