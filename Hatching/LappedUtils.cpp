@@ -279,7 +279,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
 
    for(int i=0;i<iterations;i++)
    {
-       cout<<"beginning. edgecount: "<<eLi->size()<<endl;
+      // cout<<"beginning. edgecount: "<<eLi->size()<<endl;
 
        if(vseed->e1->v1 == vseed)
            pve1=vseed->e1->v2;
@@ -597,6 +597,10 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
         PatchTri* pt = new PatchTri();
         trisMade[i] = pt;
         pt->GLMtri = &glmtris[i];
+        pt->tangent.x = model->triCurvatures[i*3];
+        pt->tangent.y = model->triCurvatures[i*3+1];
+        pt->tangent.z = model->triCurvatures[i*3+2];
+        pt->tangent.w = model->triCurvatures[1];
 
         //make/find PatchVerts for new triangle
         for(int vi=0;vi<3;vi++)
@@ -610,6 +614,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
             else
             {
                 v = new PatchVert();
+                v->tris = new QList<PatchTri*>();
                 v->GLMidx = pt->GLMtri->vindices[vi];
                 v->pos.x = glmverts[v->GLMidx];
                 v->pos.y = glmverts[v->GLMidx+1];
@@ -695,7 +700,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
     //hash table of uvs for this specific patch!
     QHash<PatchVert*,vec2<float> >* UVs = new QHash<PatchVert*, vec2<float> >();
     //list of Tris for this specific patch!
-    QList<PatchTri*> PTris = *(new QList<PatchTri*>());
+    QList<PatchTri*>* PTris = (new QList<PatchTri*>());
     //seed for this specific patch!
     PatchTri* seed = trisMade[rand()%model->numtriangles];
 
@@ -722,7 +727,8 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
     edgesInPatch.insert(seed->e12);
     edgesInPatch.insert(seed->e20);
     trisInPatch.insert(seed);
-    PTris.append(seed);
+    PTris->append(seed);
+    cout<<"PTris size init: "<<PTris->size()<<endl;
 
     //while Q not empty
         //dequeue edge e
@@ -792,7 +798,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                     {//just add the triangle/edges!
                         edgesInPatch.insert(newEdge);
                         trisInPatch.insert(otherTri);
-                        PTris.append(otherTri);
+                        PTris->append(otherTri);
                         edgeQ.enqueue(newEdge);
                     }
                     else
@@ -805,7 +811,6 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
 
                         vec2<float> sumUVs;
                         int numUVs=0;
-
                         for(int ti=0; ti<newvert->tris->size(); ti++)
                         {
                             PatchTri* curtri = newvert->tris->at(ti);
@@ -852,24 +857,26 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                         if(!edgesInPatch.contains(otherTri->e20))
                         {edgesInPatch.insert(otherTri->e20);
                          edgeQ.enqueue(otherTri->e20);}
-                        PTris.append(otherTri);
+                        PTris->append(otherTri);
                     }
                 }
             }//endif isectHull
     }//endwhile Q!Empty
+
     //PTris, UVs, seed should be sufficient to define patch!
     LappedPatch* newPatch = new LappedPatch();
-    newPatch->tris = &PTris;
+    newPatch->tris = PTris;
+    cout<<"PTris size end: "<<PTris->size()<<endl;
     newPatch->seed = seed;
     newPatch->uvs = UVs;
     PatchList->append(newPatch);
 
 
     //delete temporary stupid stuff
-    delete &edgeQ;
+    /*delete &edgeQ;
     delete &edgesInPatch;
     delete &vertsInPatch;
-    delete &trisInPatch;
+    delete &trisInPatch;*/
 
 
     //ENDWHILE MESH NOT COVERED*
@@ -882,7 +889,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
 void LappedUtils::vizualizePatch(LappedPatch* patch, QImage* img)
 {
     QPainter patr(img);
-    patr.setPen(Qt::black);
+    patr.setPen(Qt::green);
     QHash<PatchVert*, vec2<float> >* UVs = patch->uvs;
 
     for(int i=0;i<patch->tris->size();i++)

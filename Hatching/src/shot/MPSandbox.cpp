@@ -9,6 +9,7 @@
 #include "Sphere.h"
 #include "assert.h"
 #include <LappedUtils.h>
+#include "meshoperator.h"
 using std::cout;
 using std::endl;
 using std::cin;
@@ -32,11 +33,14 @@ void MPSandbox::begin()
     QImage img;
     img.load("/home/mprice/Desktop/Patch/PatchMask.png");
     LappedUtils* lu = new LappedUtils();
+    MeshOperator* mo = new MeshOperator();
+    GLMmodel* mod = models_->value("sphere").model;
+    mo->calculateCurvatures(mod);
 
     polyHull* pHull = lu->getPolyHull(&img,6);
 
     //DEBUG DRAW OUTPUT
-    QPainter patr(&img);
+    /*QPainter patr(&img);
     patr.setPen(Qt::black);
     QList<vert2d*>* vLi = pHull->verts;
     for(int i=0;i<vLi->size();i++)
@@ -85,10 +89,15 @@ void MPSandbox::begin()
     cout<<"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<endl;
 
     patr.drawLine(img.width()*s0, (1.0-t0)*img.height(), img.width()*s1, (1.0-t1)*img.height());
-    }
+    }*/
 
-
+    /*
+    QList<LappedPatch*>* LP = lu->generatePatches(mod,pHull);
+    cout<<"got patches.  patches: "<<LP->size()<<endl;
+    cout<<"patch 1 tris: "<<LP->at(0)->tris->size()<<endl;
+    lu->vizualizePatch(LP->at(0),&img);
     img.save("/home/mprice/Desktop/Patch/Collision.png","PNG");
+    */
 
 
 

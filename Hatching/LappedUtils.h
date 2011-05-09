@@ -181,7 +181,7 @@ struct PatchVert
     Vector4 pos;
     //the triangles that contain this vertex
     QList<PatchTri*>* tris;
-    PatchVert(){tris = new QList<PatchTri*>();} 
+    PatchVert(){}
 };
 
 struct PatchEdge;
