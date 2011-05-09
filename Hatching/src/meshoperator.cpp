@@ -10,6 +10,7 @@
 #include "math/CS123Algebra.h"
 #include <iostream>
 #include "math.h"
+#include "LappedUtils.h"
 
 using namespace alglib;
 using namespace std;
@@ -54,8 +55,86 @@ SparseMatrix* vec3toMat(vec3<float> v)
     m->setValue(1,0,v.y);
     m->setValue(2,0,v.z);
 }
+
+bool lineIntersect(double x1, double y1, double x2, double y2, double xa, double ya, double xb, double yb)
+{
+    {
+        double A = y2-y1;
+        double B = x1-x2;
+        double C = x1*y2-x2*y1;
+        bool agt = (A*xa+B*ya)>C;
+        bool bgt = (A*xb+B*yb)>C;
+        if (!(agt ^ bgt))
+            return false;
+        A = yb-ya;
+        B = xa-xb;
+        C = xa*yb-xb*ya;
+        agt = (A*x1+B*y1)>C;
+        bgt = (A*x2+B*y2)>C;
+        if (!(agt ^ bgt))
+            return false;
+    }
+    return true;
+}
+
+void MeshOperator::TestPatch()
+{
+    float size = 500;
+    GLMtriangle t;
+    PatchTri patch;
+    patch.v0 = new PatchVert();
+    patch.v1 = new PatchVert();
+    patch.v2 = new PatchVert();
+
+    patch.v0->pos.x=0;
+    patch.v0->pos.y=0;
+    patch.v0->pos.z=0;
+    patch.v0->pos.w=0;
+
+    patch.v1->pos.x=-12;
+    patch.v1->pos.y=3;
+    patch.v1->pos.z=4;
+    patch.v1->pos.w=0;
+
+    patch.v2->pos.x=7;
+    patch.v2->pos.y=8;
+    patch.v2->pos.z=-16;
+    patch.v2->pos.w=0;
+
+    patch.tangent.x=-.3691;
+    patch.tangent.y=-.7566;
+    patch.tangent.z=-.5398;
+    patch.tangent.w=1;
+
+    vec2<float> v1;
+    vec2<float> v2;
+    vec2<float> v3;
+    LappedUtils lutil;
+    lutil.assignSeedUV(&patch,v1,v2,v3);
+
+    QImage* testOut = new QImage((int)size,(int)size,QImage::Format_ARGB32);
+    testOut->fill(1);
+    QPainter painter(testOut);
+    painter.setPen(Qt::red);
+    painter.setBrush(Qt::red);
+    painter.drawLine(v1.x*size,v1.y*size,v2.x*size,v2.y*size);
+    painter.drawLine(v2.x*size,v2.y*size,v3.x*size,v3.y*size);
+    painter.drawLine(v1.x*size,v1.y*size,v3.x*size,v3.y*size);
+
+
+    vec2<float> v4 = lutil.estimateUV(patch.v1,patch.v0,patch.v2,v2,v1);
+
+    painter.setPen(Qt::green);
+    painter.setBrush(Qt::green);
+    painter.drawLine(v1.x*size,v1.y*size,v2.x*size,v2.y*size);
+    painter.drawLine(v2.x*size,v2.y*size,v4.x*size,v4.y*size);
+    painter.drawLine(v1.x*size,v1.y*size,v4.x*size,v4.y*size);
+    testOut->save("test.png");
+}
+
 void MeshOperator::calculateCurvatures(GLMmodel* model)
 {
+    //TestPatch();
     QHash<int,QSet<int>* > adjacencyMatrix;
     QHash<int, int> vertexNormalComps;
     for(int i=0;i<model->numtriangles;i++) //Create adjacency matrix and vertex-normal mapping
