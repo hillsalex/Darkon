@@ -23,7 +23,7 @@ int LappedUtils::ccw(vert2d* p1,vert2d* p2,vert2d* p3)
 }
 
 //Assuming A and B have correct UV coords and world space coords, return an estimate of C's UV coords
-vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst)
+vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst, vec2<float> Otherst)
 {
 
 
@@ -47,9 +47,39 @@ vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, ve
     // Ap.x = Ast.x; Ap.y = Ast.y; Bp.x = B->s; Bp.y = B->t;
     Cp = Ast + x*ABp + y*AB_rp;
 
+
+
+
+    AC = C->pos - B->pos;
+    AB = A->pos - B->pos;
+
+    AB_r = AB * getRotMat(Vector4(A->pos.x,A->pos.y,A->pos.z,0),AC.cross(AB),M_PI/2.0);
+    x = AC.dot(AB) / AB.getMagnitude2();
+    y = AC.dot(AB_r) / AB.getMagnitude2();
+
+    //these are UVS
+    ABp,AB_rp;
+    ABp.x = Bst.x - Ast.x;
+    ABp.y = Bst.y - Ast.y;
+    AB_rp.x = ABp.y;
+    AB_rp.y = -ABp.x;
+
+
+
+    vec2<float> Cp2; //Ap,Bp
+    // Ap.x = Ast.x; Ap.y = Ast.y; Bp.x = B->s; Bp.y = B->t;
+    Cp2 = Ast + x*ABp + y*AB_rp;
+
+    vec2<float>CP1 = Cp-Otherst;
+    vec2<float>CP2 = Cp2-Otherst;
+
+    if ((CP1.x*CP1.x+CP1.y*CP1.y)>(CP2.x*CP2.x+CP2.y*CP2.y))
+        return Cp;
+    else
+        return Cp2;
+
     //cout<<"AB: "<<AB<<" AC: "<<AC<<" AB_r: "<<AB_r<<" ABp: "<<ABp<<" AB_rp: "<<AB_rp<<" x: "<<x<<" y: "<<y<<" Ap:"<<Ap<<" Bp: "<<Bp<<" Cp: "<<Cp<<endl;
     //cout<<"AC dot AB: "<<AC.dot(AB)<<" AB dot AC: "<<AB.dot(AC)<<" mag AB: "<<AB.getMagnitude()<<endl;
-    return Cp;
 }
 
 
@@ -117,13 +147,14 @@ void LappedUtils::assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v
     seed->tangent = Tp;
     Tp.normalize();
     double tanAngle = acos(Vector4(0,1,0,0).dot(Tp));
+    /*
     Matrix4x4 tanMat = getRotMat(Vector4(0,0,0,0),Vector4(0,1,0,0).cross(Tp),tanAngle);
     Ap = tanMat*Ap;
     Bp = tanMat*Bp;
     Cp = tanMat*Cp;
     Ap.w = 1;
     Bp.w = 1;
-    Cp.w = 1;
+    Cp.w = 1;*/
     transMat = getTransMat(Vector4(.5,.5,0,0));
     Ap = transMat*Ap;
     Bp = transMat*Bp;
@@ -752,9 +783,10 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
         //take average of those guys as UV for new vert
         //then add triangle like above: enq new edges, mark any new edges, vert, tri as visited
         //patch is done, delete visitedSets, continue to next patch
-
-    while(!edgeQ->isEmpty())
+    int fucktris = 0;
+    while(!edgeQ->isEmpty())// && fucktris < 3)
     {
+        fucktris++;
         PatchEdge* e = edgeQ->dequeue();
             PatchTri* otherTri;
             if(trisInPatch->contains(e->t1))
@@ -872,6 +904,10 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
         //PTris, UVs, seed should be sufficient to define patch!
         LappedPatch* newPatch = new LappedPatch();
         newPatch->tris = PTris;
+        for (int ptt=0;ptt<PTris->size();ptt++)
+        {
+            printPatchTri3d(newPatch->tris->at(ptt));
+        }
         //cout<<"PTris size end: "<<PTris->size()<<endl;
         newPatch->seed = seed;
         newPatch->uvs = UVs;
@@ -928,5 +964,5 @@ void LappedUtils::printPatchTri2d(PatchTri* pt)
 }
 void LappedUtils::printPatchTri3d(PatchTri* pt)
 {
-    cout<<"2dTri: "<<pt->v0->pos<<" "<<pt->v1->pos<<" "<<pt->v2->pos<<endl;
+    cout<<"3dTri: "<<pt->v0->pos<<" "<<pt->v1->pos<<" "<<pt->v2->pos<<endl;
 }

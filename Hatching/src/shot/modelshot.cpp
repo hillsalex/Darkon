@@ -5,7 +5,7 @@
 using std::cout;
 using std::endl;
 
-QString modelstring = "mug";
+QString modelstring = "torushd";
 
 
 modelShot::modelShot(DrawEngine* parent,QHash<QString, QGLShaderProgram *>* shad, QHash<QString, GLuint>* tex, QHash<QString, Model>* mod) : Shot(parent,shad,tex,mod)
@@ -88,10 +88,10 @@ void modelShot::draw()
     glMatrixMode(GL_MODELVIEW);
     glActiveTexture(GL_TEXTURE0);
     QList<QString> keys = models_->keys();
-    bool drawVertCurvatures = false;
-    bool drawVertMinCurvatures = false;
+    bool drawVertCurvatures = true;
+    bool drawVertMinCurvatures = true;
     bool drawFaceCurvatures = true;
-    float scaleFactor = 1/20.0;
+    float scaleFactor = 1/3.0;
 
 
 
