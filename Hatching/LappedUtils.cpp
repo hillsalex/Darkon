@@ -23,7 +23,7 @@ int LappedUtils::ccw(vert2d* p1,vert2d* p2,vert2d* p3)
 }
 
 //Assuming A and B have correct UV coords and world space coords, return an estimate of C's UV coords
-vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst)
+vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst, vec2<float> BADGUY)
 {
 
 
@@ -842,7 +842,8 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                             else
                                 continue;
                             numUVs++;
-                            sumUVs = sumUVs + estimateUV(_A,_B,newvert, UVs->value(_A), UVs->value(_B));
+                            vec2<float> badguy = UVs->value(mappedE->otherTri(curTri)->otherVert(mappedE->v0, mappedE->v1));
+                            sumUVs = sumUVs + estimateUV(_A,_B,newvert, UVs->value(_A), UVs->value(_B), badguy);
                         }
                         //sumUVs is actually now the UVs we want
                         sumUVs = sumUVs / (1.0+numUVs);
