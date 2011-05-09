@@ -221,6 +221,7 @@ struct PatchEdge
     PatchTri* t2;
     PatchEdge(PatchVert* _v0, PatchVert* _v1):v0(_v0),v1(_v1){ntris=0;}
     void addTri(PatchTri* t){if(ntris==0){ntris++;t1=t;}else if(ntris==1){ntris++;t2=t;}else{cout<<"TRIED TO ADD MORE THAN TWO TRIANGLES TO AN EDGE"<<endl;}}
+    PatchTri* otherTri(PatchTri* _t){if (_t == t1)return t2; else if(_t==t2)return t1;else cout<<"TRIED TO GET OTHER TRIANGLE WITH BAD INPUT"<<endl;}
 };
 
 struct LappedPatch
@@ -238,7 +239,7 @@ public:
     void printEdge(edge2d* e){cout<<"{("<<e->v1->x<<","<<e->v1->y<<") ("<<e->v2->x<<","<<e->v2->y<<")}"<<endl;}
     polyHull* getPolyHull(QImage* blob,int iterations);
     QList<LappedPatch*>* generatePatches(GLMmodel* model, polyHull* polyhull);
-    vec2<float> estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst);
+    vec2<float> estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst, vec2<float> BADGUY);
     void assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v1st, vec2<float> &v2st);
     void vizualizePatch(LappedPatch* patch, QImage* img);
     void drawEdgeFromUV(QImage* img, QPainter* patr, vec2<float> v0, vec2<float>v1);

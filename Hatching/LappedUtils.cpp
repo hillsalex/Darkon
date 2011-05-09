@@ -23,7 +23,7 @@ int LappedUtils::ccw(vert2d* p1,vert2d* p2,vert2d* p3)
 }
 
 //Assuming A and B have correct UV coords and world space coords, return an estimate of C's UV coords
-vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst, vec2<float> Otherst)
+vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst, vec2<float> BADGUY)
 {
 
 
@@ -469,7 +469,8 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
                     vertsMade->remove(qMakePair(C->x,C->y));
                     delete C;
                 }
-                else
+
+                if(isecx>1 && isecx<img.width()-1 && isecy>1 && isecy<img.width()-1)
                 {
                     //concave-convex \/\  OR
                     //both angles concave \__/
@@ -878,6 +879,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                             else
                                 continue;
                             numUVs++;
+                            vec2<float> badguy = UVs->value( mappedE->otherTri(curtri)->otherVert(mappedE->v0,mappedE->v1));
                             sumUVs = sumUVs + estimateUV(_B,_A,newvert, UVs->value(_B), UVs->value(_A));
                         }
                         //sumUVs is actually now the UVs we want
