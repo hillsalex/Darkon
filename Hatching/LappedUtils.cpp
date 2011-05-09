@@ -614,6 +614,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
             else
             {
                 v = new PatchVert();
+                vertsMade->insert(pt->GLMtri->vindices[vi],v);
                 v->tris = new QList<PatchTri*>();
                 v->GLMidx = pt->GLMtri->vindices[vi];
                 v->pos.x = glmverts[v->GLMidx];
@@ -760,7 +761,8 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                 }
                 else
                 {
-                 cout<<"both tris already in patch or edge only has one tri"<<endl;
+                 cout<<"both tris already in patch or edge only has one tri"<<endl;                 
+                 continue;
                 }
             }
             else if(e->ntris>=1)

@@ -133,7 +133,7 @@ struct polyHull
                 numIntersections++;
             }
         }
-        cout<<"numIntersections: "<<numIntersections<<endl;
+        //cout<<"numIntersections: "<<numIntersections<<endl;
         return numIntersections%2==1;
     }
     //returns true if the segment intersects the hull
