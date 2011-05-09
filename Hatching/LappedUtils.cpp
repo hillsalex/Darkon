@@ -1,7 +1,7 @@
 #include "LappedUtils.h"
 #include <QQueue>
-#include <QHash>
-#include <math.h>
+#include <QSet>
+#include "assert.h"
 
 LappedUtils::LappedUtils()
 {
@@ -194,8 +194,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
                         edge2d* e = new edge2d(v,v2);
                         edgesMade->insert(qMakePair(v,v2),e);
                         edgesMade->insert(qMakePair(v2,v),e);
-                        eLi->append(e);
-                        //cout<<"adding edge ("<<v->x<<","<<v->y<<")->("<<v2->x<<","<<v2->y<<")"<<endl;
+                        eLi->append(e); //cout<<"157- "; printEdge(e);
                         v->addEdge(e);
                         v2->addEdge(e);
                     }
@@ -229,8 +228,8 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
             edge2d* e = new edge2d(vs,vnew);
             edgesMade->insert(qMakePair(vs,vnew),e);
             edgesMade->insert(qMakePair(vnew,vs),e);
-            eLi->append(e);
-            //cout<<"e: ";printEdge(e);
+            eLi->append(e); //cout<<"192- "; printEdge(e);
+
             edge2d* e1 = edgesMade->value(qMakePair(vs,ve));
             //cout<<"e1: ";printEdge(e1);
             edge2d* e2 = edgesMade->value(qMakePair(ve,vnew));
@@ -280,7 +279,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
 
    for(int i=0;i<iterations;i++)
    {
-       cout<<"beginning. vseed: "<<vseed<<endl;
+       cout<<"beginning. edgecount: "<<eLi->size()<<endl;
 
        if(vseed->e1->v1 == vseed)
            pve1=vseed->e1->v2;
@@ -298,12 +297,9 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
 
     vert2d* A = vseed;
     vert2d* B = ve;
-    cout<<"here?"<<endl;
     vert2d* C = B->otherAdjVert(A);
-    cout<<"yup"<<endl;
     vert2d* D = C->otherAdjVert(B);
     vert2d* nextA = D->otherAdjVert(C);
-    cout<<"done beginning"<<endl;
 
 
     bool passDoneFlag=false;
@@ -357,11 +353,11 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
                 edge2d* eAVN = new edge2d(A,VN);
                 edgesMade->insert(qMakePair(A,VN),eAVN);
                 edgesMade->insert(qMakePair(VN,A),eAVN);
-                eLi->append(eAVN);
+                eLi->append(eAVN);// cout<<"317- "; printEdge(eAVN);
                 edge2d* eVND = new edge2d(VN,D);
                 edgesMade->insert(qMakePair(D,VN),eVND);
                 edgesMade->insert(qMakePair(VN,D),eVND);
-                eLi->append(eVND);
+                eLi->append(eVND); //cout<<"321- "; printEdge(eVND);
 
                 VN->addEdge(eAVN);
                 VN->addEdge(eVND);
@@ -396,7 +392,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
              edge2d* e = new edge2d(B,D);
              edgesMade->insert(qMakePair(B,D),e);
              edgesMade->insert(qMakePair(D,B),e);
-             eLi->append(e);
+             eLi->append(e); //cout<<"356- "; printEdge(e);
              edge2d* oldBe = edgesMade->value(qMakePair(B,C));
              edge2d* oldDe = edgesMade->value(qMakePair(C,D));
              B->replaceEdge(oldBe,e);
@@ -422,7 +418,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
                 edge2d* e = new edge2d(B,D);
                 edgesMade->insert(qMakePair(B,D),e);
                 edgesMade->insert(qMakePair(D,B),e);
-                eLi->append(e);
+                eLi->append(e); //cout<<"382- "; printEdge(e);
                 edge2d* oldBe = edgesMade->value(qMakePair(B,C));
                 edge2d* oldDe = edgesMade->value(qMakePair(C,D));
                 B->replaceEdge(oldBe,e);
@@ -447,7 +443,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
                 edge2d* e = new edge2d(A,C);
                 edgesMade->insert(qMakePair(A,C),e);
                 edgesMade->insert(qMakePair(C,A),e);
-                eLi->append(e);
+                eLi->append(e);// cout<<"407- "; printEdge(e);
                 edge2d* oldAe = edgesMade->value(qMakePair(A,B));
                 edge2d* oldCe = edgesMade->value(qMakePair(B,C));
                 A->replaceEdge(oldAe,e);
@@ -470,7 +466,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
             edge2d* e = new edge2d(A,C);
             edgesMade->insert(qMakePair(A,C),e);
             edgesMade->insert(qMakePair(C,A),e);
-            eLi->append(e);
+            eLi->append(e); //cout<<"430- "; printEdge(e);
             edge2d* oldAe = edgesMade->value(qMakePair(A,B));
             edge2d* oldCe = edgesMade->value(qMakePair(B,C));
             A->replaceEdge(oldAe,e);
@@ -496,21 +492,49 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
         nextA = D->otherAdjVert(C);
         //cout<<"done advancing"<<endl;
         if(A==vseed || B==vseed || C==vseed || D==vseed)
-        {cout<<"setting that flag"<<endl;
+        {
             passDoneFlag=true;
         }
     }
 }
 
+
+   delete eLi;
+   eLi = new QList<edge2d*>();
+
+   QSet<edge2d*>* visitedE = new QSet<edge2d*>();
+   for(int i=0; i<vLi->size(); i++)
+   {
+       vert2d* vv = vLi->at(i);
+       if(!visitedE->contains(vv->e1))
+       {
+           eLi->append(vv->e1);
+           visitedE->insert(vv->e1);
+       }
+       if(!visitedE->contains(vv->e2))
+       {
+           eLi->append(vv->e2);
+           visitedE->insert(vv->e2);
+       }
+   }
+
+
+
+
    polyHull* pHull = new polyHull(vLi,eLi);
+
+   //pHull->print();
+
    pHull->imgh = h;
    pHull->imgw = w;
+
+
    return pHull;
 }
 
 //OKAY LETS GET REAL HERE
 //for now lets just try to create a single patch
-QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* polyhull)
+QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* polyhull)
 {
 
 //*************REFERENCE PSEUDOCODE*************************************
@@ -560,7 +584,7 @@ QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* poly
     //return patch list!
 
     //*****************OKAY LETS ACTUALLY IMPLEMENT IT******************************
-
+    QList<LappedPatch*>* PatchList = new QList<LappedPatch*>();
     //PREPROCESSING
     GLMtriangle* glmtris = model->triangles;
     GLfloat* glmverts = model->vertices;
@@ -615,6 +639,7 @@ QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* poly
         {
             PatchEdge* e = edgesMade->value(e01);
             e->addTri(pt);
+            pt->e01 = e;
         }
         else
         {
@@ -622,11 +647,13 @@ QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* poly
             edgesMade->insert(e01,e);
             edgesMade->insert(qMakePair(pt->v1,pt->v0),e);
             e->addTri(pt);
+            pt->e01=e;
         }
         if(edgesMade->contains(e12))
         {
             PatchEdge* e = edgesMade->value(e12);
             e->addTri(pt);
+            pt->e12=e;
         }
         else
         {
@@ -634,11 +661,13 @@ QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* poly
             edgesMade->insert(e12,e);
             edgesMade->insert(qMakePair(pt->v2,pt->v1),e);
             e->addTri(pt);
+            pt->e12=e;
         }
         if(edgesMade->contains(e20))
         {
             PatchEdge* e = edgesMade->value(e20);
             e->addTri(pt);
+            pt->e20=e;
         }
         else
         {
@@ -646,6 +675,7 @@ QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* poly
             edgesMade->insert(e20,e);
             edgesMade->insert(qMakePair(pt->v0,pt->v2),e);
             e->addTri(pt);
+            pt->e20=e;
         }
     }//OK TRIANGLES MADE
 
@@ -655,24 +685,228 @@ QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* poly
     {                           //***
     //WHILE MESH IS NOT COVERED******
 
+
     //choose seed triangle, get center point
         //for now, tangent equals vo--->v1  (should be curvature!)
     //assign UVS to PatchTri s.t. centered at .5,.5 and tangent is aligned with texture //HOW???? NEED BITANGENT OR NO?  HOW TO DETERMINE SCALE?
         //enqueue edges of triangle
+
+   //DONT DELETE THESE THINGS!
+    //hash table of uvs for this specific patch!
+    QHash<PatchVert*,vec2<float> >* UVs = new QHash<PatchVert*, vec2<float> >();
+    //list of Tris for this specific patch!
+    QList<PatchTri*> PTris = *(new QList<PatchTri*>());
+    //seed for this specific patch!
     PatchTri* seed = trisMade[rand()%model->numtriangles];
 
+    vec2<float> seedUV0, seedUV1, seedUV2;
+    assignSeedUV(seed, seedUV0, seedUV1, seedUV2);
+    UVs->insert(seed->v0,seedUV0);
+    UVs->insert(seed->v1,seedUV1);
+    UVs->insert(seed->v2,seedUV2);
+
+    QQueue<PatchEdge*> edgeQ = *(new QQueue<PatchEdge*>());
+    edgeQ.enqueue(seed->e01);
+    edgeQ.enqueue(seed->e12);
+    edgeQ.enqueue(seed->e20);
+
+    //make visitedSets of edges, verts, tris
+    //mark everything from seed as visited
+    QSet<PatchVert*> vertsInPatch = *(new QSet<PatchVert*>());
+    QSet<PatchEdge*> edgesInPatch = *(new QSet<PatchEdge*>());
+    QSet<PatchTri*> trisInPatch = *(new QSet<PatchTri*>());
+    vertsInPatch.insert(seed->v0);
+    vertsInPatch.insert(seed->v1);
+    vertsInPatch.insert(seed->v2);
+    edgesInPatch.insert(seed->e01);
+    edgesInPatch.insert(seed->e12);
+    edgesInPatch.insert(seed->e20);
+    trisInPatch.insert(seed);
+    PTris.append(seed);
+
+    //while Q not empty
+        //dequeue edge e
+            //find other triangle in edge
+            //if tri is not in patch
+                //if e isects hull  //see struct polyHull::isectUV
+                    //if homeomorphic to a disc (new vert not in patch OR only 1 edge not in patch)
+                      //if new vert already in patch
+                          //just add triangle to patch!
+                              //enqueue new edges of triangle
+                              //and mark them as visited, as well as new tri itself
+                      //else need to add vert:
+                          //estimate parametrization of new vert like so:
+                              //for each triangle containing vert and an already-mapped edge
+                                  //stick a similar triangle onto that edge, and see where the corresponding location of vert is
+                              //take average of those guys as UV for new vert
+                          //then add triangle like above: enq new edges, mark any new edges, vert, tri as visited
+       //patch is done, delete visitedSets, continue to next patch
+
+    while(!edgeQ.isEmpty())
+    {
+        PatchEdge* e = edgeQ.dequeue();
+            PatchTri* otherTri;
+            if(trisInPatch.contains(e->t1))
+            {
+                if(e->ntris==2 && !trisInPatch.contains(e->t2))
+                {
+                    otherTri = e->t2;
+                }
+                else
+                {
+                 cout<<"both tris already in patch or edge only has one tri"<<endl;
+                }
+            }
+            else if(e->ntris>=1)
+            {
+               otherTri = e->t1;
+            }
+            else
+            {
+                cout<<"edge somehow has no triangles"<<endl;
+                continue;
+            }
+
+            //if e isects hull
+            vec2<float> uv1 = UVs->value(e->v0);
+            vec2<float> uv2 = UVs->value(e->v1);
+            if(polyhull->isectHullUV(uv1.x,uv1.y,uv2.x,uv2.y))
+            {
+                PatchEdge* newEdge;//only relevant if theres only one
+                PatchVert* newvert = otherTri->otherVert(e->v0, e->v1);
+                //if homeomorphic to a disk
+                bool newvertinpatch = vertsInPatch.contains(newvert);
+                int numNewEdgesInPatch=0;
+                if(edgesInPatch.contains(otherTri->e01)){
+                    numNewEdgesInPatch++;
+                    newEdge=otherTri->e01;}
+                if(edgesInPatch.contains(otherTri->e12)){
+                    numNewEdgesInPatch++;
+                    newEdge=otherTri->e12;}
+                if(edgesInPatch.contains(otherTri->e20)){
+                    numNewEdgesInPatch++;
+                    newEdge=otherTri->e20;}
+                if( !newvertinpatch || numNewEdgesInPatch==1)
+                {
+                    if(newvertinpatch)
+                    {//just add the triangle/edges!
+                        edgesInPatch.insert(newEdge);
+                        trisInPatch.insert(otherTri);
+                        PTris.append(otherTri);
+                        edgeQ.enqueue(newEdge);
+                    }
+                    else
+                    {//gotta add the new vertex
+                        //estimate parametrization of new vert like so:
+                            //for each triangle containing vert and an already-mapped edge
+                                //stick a similar triangle onto that edge, and see where the corresponding location of vert is
+                            //take average of those guys as UV for new vert
+                        //then add triangle like above: enq new edges, mark any new edges, vert, tri as visited
+
+                        vec2<float> sumUVs;
+                        int numUVs=0;
+
+                        for(int ti=0; ti<newvert->tris->size(); ti++)
+                        {
+                            PatchTri* curtri = newvert->tris->at(ti);
+                            PatchEdge* mappedE;
+                            PatchVert *_A,*_B;//args to estimateUV
+                            if(edgesInPatch.contains(curtri->e01))
+                            {
+                                assert(newvert == curtri->v2);
+                                mappedE = curtri->e01;
+                                _A = curtri->v0;
+                                _B = curtri->v1;
+                            }
+                            else if(edgesInPatch.contains(curtri->e12))
+                            {
+                                assert(newvert == curtri->v0);
+                                mappedE = curtri->e12;
+                                _A = curtri->v1;
+                                _B = curtri->v2;
+                            }
+                            else if(edgesInPatch.contains(curtri->e20))
+                            {
+                                assert(newvert == curtri->v1);
+                                mappedE = curtri->e20;
+                                _A = curtri->v2;
+                                _B = curtri->v0;
+                            }
+                            else
+                                continue;
+                            numUVs++;
+                            sumUVs = sumUVs + estimateUV(_A,_B,newvert, UVs->value(_A), UVs->value(_B));
+                        }
+                        //sumUVs is actually now the UVs we want
+                        sumUVs = sumUVs / (1.0+numUVs);
+                        //add all the crap
+                        UVs->insert(newvert,sumUVs);
+                        vertsInPatch.insert(newvert);
+                        trisInPatch.insert(otherTri);
+                        if(!edgesInPatch.contains(otherTri->e01))
+                            {edgesInPatch.insert(otherTri->e01);
+                             edgeQ.enqueue(otherTri->e01);}
+                        if(!edgesInPatch.contains(otherTri->e12))
+                            {edgesInPatch.insert(otherTri->e12);
+                             edgeQ.enqueue(otherTri->e12);}
+                        if(!edgesInPatch.contains(otherTri->e20))
+                        {edgesInPatch.insert(otherTri->e20);
+                         edgeQ.enqueue(otherTri->e20);}
+                        PTris.append(otherTri);
+                    }
+                }
+            }//endif isectHull
+    }//endwhile Q!Empty
+    //PTris, UVs, seed should be sufficient to define patch!
+    LappedPatch* newPatch = new LappedPatch();
+    newPatch->tris = &PTris;
+    newPatch->seed = seed;
+    newPatch->uvs = UVs;
+    PatchList->append(newPatch);
 
 
-
+    //delete temporary stupid stuff
+    delete &edgeQ;
+    delete &edgesInPatch;
+    delete &vertsInPatch;
+    delete &trisInPatch;
 
 
     //ENDWHILE MESH NOT COVERED*
     }                       //**
     //ENDWHILE MESH NOT COvERED*
 
+    return PatchList;
+}
 
+void LappedUtils::vizualizePatch(LappedPatch* patch, QImage* img)
+{
+    QPainter patr(img);
+    patr.setPen(Qt::black);
+    QHash<PatchVert*, vec2<float> >* UVs = patch->uvs;
 
-
-
+    for(int i=0;i<patch->tris->size();i++)
+    {
+        PatchTri* pt = patch->tris->at(i);
+        drawEdgeFromUV(img, &patr, UVs->value(pt->v0), UVs->value(pt->v1));
+        drawEdgeFromUV(img, &patr, UVs->value(pt->v1), UVs->value(pt->v2));
+        drawEdgeFromUV(img, &patr, UVs->value(pt->v2), UVs->value(pt->v0));
+    }
+    //draw seed in red because why not
+    patr.setPen(Qt::red);
+    PatchTri* pt = patch->seed;
+    drawEdgeFromUV(img, &patr, UVs->value(pt->v0), UVs->value(pt->v1));
+    drawEdgeFromUV(img, &patr, UVs->value(pt->v1), UVs->value(pt->v2));
+    drawEdgeFromUV(img, &patr, UVs->value(pt->v2), UVs->value(pt->v0));
+    patr.end();
+}
+void LappedUtils::drawEdgeFromUV(QImage* img, QPainter* patr, vec2<float> v0, vec2<float>v1)
+{
+    int x0,y0,x1,y1;
+    x0 = v0.x * img->width();
+    y0 = (1.0-v0.y) * img->height();
+    x1 = v1.x * img->width();
+    y1 = (1.0-v1.y) * img->height();
+    patr->drawLine(x0,y0,x1,y1);
 
 }
