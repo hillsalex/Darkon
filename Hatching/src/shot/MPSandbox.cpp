@@ -95,6 +95,7 @@ void MPSandbox::begin()
     QList<LappedPatch*>* LP = lu->generatePatches(mod,pHull);
     cout<<"got patches.  patches: "<<LP->size()<<endl;
     cout<<"patch 1 tris: "<<LP->at(0)->tris->size()<<endl;
+    lu->printPatchTri2d(LP->at(0)->tris->at(0));
     lu->vizualizePatch(LP->at(0),&img);
     img.save("/home/mprice/Desktop/Patch/Collision.png","PNG");
 

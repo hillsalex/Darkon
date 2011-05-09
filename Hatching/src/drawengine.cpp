@@ -106,7 +106,7 @@ DrawEngine::DrawEngine(const QGLContext *context,int w,int h, GLWidget* widget) 
     m_shots->append(  new MPSandbox(this, &shader_programs_, &textures_, &models_));
 
     m_shots->at(m_curShot)->begin();
-    BYSandbox *blah = new BYSandbox(this);
+    //BYSandbox *blah = new BYSandbox(this);
     /****************************************/
 }
 
