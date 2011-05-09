@@ -11,6 +11,7 @@
 #include <LappedUtils.h>
 using std::cout;
 using std::endl;
+using std::cin;
 using std::vector;
 using std::stringstream;
 MPSandbox::MPSandbox(DrawEngine* parent,QHash<QString, QGLShaderProgram *>* shad, QHash<QString, GLuint>* tex, QHash<QString, Model>* mod) : Shot(parent,shad,tex,mod)
@@ -31,8 +32,8 @@ void MPSandbox::begin()
     QImage img;
     img.load("/home/mprice/Desktop/Patch/PatchMask.png");
     LappedUtils* lu = new LappedUtils();
-    /*
-    polyHull* pHull = lu->getPolyHull(&img,0);
+
+    polyHull* pHull = lu->getPolyHull(&img,6);
 
     //DEBUG DRAW OUTPUT
     QPainter patr(&img);
@@ -44,32 +45,52 @@ void MPSandbox::begin()
         patr.drawLine(v->e1->v1->x,v->e1->v1->y,v->e1->v2->x,v->e1->v2->y);
         patr.drawLine(v->e2->v1->x,v->e2->v1->y,v->e2->v2->x,v->e2->v2->y);
     }
-    patr.setPen(Qt::red);
+    QList<edge2d*>* eLi = pHull->edges;
+    for(int i=0;i<eLi->size();i++)
+    {
+        edge2d* e = eLi->at(i);
+        patr.drawLine(e->v1->x, e->v1->y, e->v2->x, e->v2->y);
+    }
+    patr.setPen(Qt::blue);
     for(int i=0;i<vLi->size();i++)
     {
         vert2d* v = vLi->at(i);
         assert(v->nedges==2);
         patr.drawPoint(v->x,v->y);
     }
-        patr.end();
-    img.save("/home/mprice/Desktop/Patch/LappedUtiloutput.png","PNG");*/
 
-    /*PatchVert a,b,c;
-    a.pos.x = 0;
-    a.pos.y = 0;
-    a.pos.z = 0;
-    a.s = 0;
-    a.t = 0;
-    b.pos.x = 0;
-    b.pos.y = 3;
-    b.pos.z = 0;
-    b.s = 0;
-    b.t = 3;
-    c.pos.x = 3;
-    c.pos.y = 3;
-    c.pos.z = 0;
-    vec2<float> g = lu->estimateUV(&a,&b,&c);
-    cout<<"<"<<g.x<<","<<g.y<<"> == <3,3> ?"<<endl;*/
+
+    for(int i=0; i<50; i++)
+    {
+    float s0,t0,s1,t1;
+    s0 = rand()%100/100.0;
+    t0 = rand()%100/100.0;
+    s1 = rand()%100/100.0;
+    t1 = rand()%100/100.0;
+
+
+    //(0,107.52) ---- (32,108.8)
+    //s0 = 0.0;
+    //t0 = 1.0- (107.52 / img.height());
+    //s1 = 32.0/img.width();
+    //t1 = 1.0-(108.8 / img.height());
+
+
+    cout<<"*******************************************************"<<endl;
+    cout<<"("<<s0*img.width() << "," << (1.0-t0)*img.height() <<") ---- (" << s1*img.width() <<","<< (1.0-t1)*img.height() <<")"<<endl;
+    if(pHull->isectHullUV(s0,t0,s1,t1))
+    {patr.setPen(Qt::red); cout<<"red"<<endl;}
+    else
+    {patr.setPen(Qt::green); cout<<"green"<<endl;}
+    cout<<"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<endl;
+
+    patr.drawLine(img.width()*s0, (1.0-t0)*img.height(), img.width()*s1, (1.0-t1)*img.height());
+    }
+
+
+    img.save("/home/mprice/Desktop/Patch/Collision.png","PNG");
+
+
 
 }
 

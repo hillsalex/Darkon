@@ -154,8 +154,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
                         edge2d* e = new edge2d(v,v2);
                         edgesMade->insert(qMakePair(v,v2),e);
                         edgesMade->insert(qMakePair(v2,v),e);
-                        eLi->append(e);
-                        //cout<<"adding edge ("<<v->x<<","<<v->y<<")->("<<v2->x<<","<<v2->y<<")"<<endl;
+                        eLi->append(e); //cout<<"157- "; printEdge(e);
                         v->addEdge(e);
                         v2->addEdge(e);
                     }
@@ -189,8 +188,8 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
             edge2d* e = new edge2d(vs,vnew);
             edgesMade->insert(qMakePair(vs,vnew),e);
             edgesMade->insert(qMakePair(vnew,vs),e);
-            eLi->append(e);
-            //cout<<"e: ";printEdge(e);
+            eLi->append(e); //cout<<"192- "; printEdge(e);
+
             edge2d* e1 = edgesMade->value(qMakePair(vs,ve));
             //cout<<"e1: ";printEdge(e1);
             edge2d* e2 = edgesMade->value(qMakePair(ve,vnew));
@@ -240,7 +239,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
 
    for(int i=0;i<iterations;i++)
    {
-       cout<<"beginning. vseed: "<<vseed<<endl;
+       cout<<"beginning. edgecount: "<<eLi->size()<<endl;
 
        if(vseed->e1->v1 == vseed)
            pve1=vseed->e1->v2;
@@ -258,12 +257,9 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
 
     vert2d* A = vseed;
     vert2d* B = ve;
-    cout<<"here?"<<endl;
     vert2d* C = B->otherAdjVert(A);
-    cout<<"yup"<<endl;
     vert2d* D = C->otherAdjVert(B);
     vert2d* nextA = D->otherAdjVert(C);
-    cout<<"done beginning"<<endl;
 
 
     bool passDoneFlag=false;
@@ -317,11 +313,11 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
                 edge2d* eAVN = new edge2d(A,VN);
                 edgesMade->insert(qMakePair(A,VN),eAVN);
                 edgesMade->insert(qMakePair(VN,A),eAVN);
-                eLi->append(eAVN);
+                eLi->append(eAVN);// cout<<"317- "; printEdge(eAVN);
                 edge2d* eVND = new edge2d(VN,D);
                 edgesMade->insert(qMakePair(D,VN),eVND);
                 edgesMade->insert(qMakePair(VN,D),eVND);
-                eLi->append(eVND);
+                eLi->append(eVND); //cout<<"321- "; printEdge(eVND);
 
                 VN->addEdge(eAVN);
                 VN->addEdge(eVND);
@@ -356,7 +352,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
              edge2d* e = new edge2d(B,D);
              edgesMade->insert(qMakePair(B,D),e);
              edgesMade->insert(qMakePair(D,B),e);
-             eLi->append(e);
+             eLi->append(e); //cout<<"356- "; printEdge(e);
              edge2d* oldBe = edgesMade->value(qMakePair(B,C));
              edge2d* oldDe = edgesMade->value(qMakePair(C,D));
              B->replaceEdge(oldBe,e);
@@ -382,7 +378,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
                 edge2d* e = new edge2d(B,D);
                 edgesMade->insert(qMakePair(B,D),e);
                 edgesMade->insert(qMakePair(D,B),e);
-                eLi->append(e);
+                eLi->append(e); //cout<<"382- "; printEdge(e);
                 edge2d* oldBe = edgesMade->value(qMakePair(B,C));
                 edge2d* oldDe = edgesMade->value(qMakePair(C,D));
                 B->replaceEdge(oldBe,e);
@@ -407,7 +403,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
                 edge2d* e = new edge2d(A,C);
                 edgesMade->insert(qMakePair(A,C),e);
                 edgesMade->insert(qMakePair(C,A),e);
-                eLi->append(e);
+                eLi->append(e);// cout<<"407- "; printEdge(e);
                 edge2d* oldAe = edgesMade->value(qMakePair(A,B));
                 edge2d* oldCe = edgesMade->value(qMakePair(B,C));
                 A->replaceEdge(oldAe,e);
@@ -430,7 +426,7 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
             edge2d* e = new edge2d(A,C);
             edgesMade->insert(qMakePair(A,C),e);
             edgesMade->insert(qMakePair(C,A),e);
-            eLi->append(e);
+            eLi->append(e); //cout<<"430- "; printEdge(e);
             edge2d* oldAe = edgesMade->value(qMakePair(A,B));
             edge2d* oldCe = edgesMade->value(qMakePair(B,C));
             A->replaceEdge(oldAe,e);
@@ -456,21 +452,49 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
         nextA = D->otherAdjVert(C);
         //cout<<"done advancing"<<endl;
         if(A==vseed || B==vseed || C==vseed || D==vseed)
-        {cout<<"setting that flag"<<endl;
+        {
             passDoneFlag=true;
         }
     }
 }
 
+
+   delete eLi;
+   eLi = new QList<edge2d*>();
+
+   QSet<edge2d*>* visitedE = new QSet<edge2d*>();
+   for(int i=0; i<vLi->size(); i++)
+   {
+       vert2d* vv = vLi->at(i);
+       if(!visitedE->contains(vv->e1))
+       {
+           eLi->append(vv->e1);
+           visitedE->insert(vv->e1);
+       }
+       if(!visitedE->contains(vv->e2))
+       {
+           eLi->append(vv->e2);
+           visitedE->insert(vv->e2);
+       }
+   }
+
+
+
+
    polyHull* pHull = new polyHull(vLi,eLi);
+
+   //pHull->print();
+
    pHull->imgh = h;
    pHull->imgw = w;
+
+
    return pHull;
 }
 
 //OKAY LETS GET REAL HERE
 //for now lets just try to create a single patch
-QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* polyhull)
+QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* polyhull)
 {
 
 //*************REFERENCE PSEUDOCODE*************************************
@@ -520,7 +544,7 @@ QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* poly
     //return patch list!
 
     //*****************OKAY LETS ACTUALLY IMPLEMENT IT******************************
-
+    QList<LappedPatch*>* PatchList = new QList<LappedPatch*>();
     //PREPROCESSING
     GLMtriangle* glmtris = model->triangles;
     GLfloat* glmverts = model->vertices;
@@ -798,6 +822,7 @@ QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* poly
     newPatch->tris = &PTris;
     newPatch->seed = seed;
     newPatch->uvs = UVs;
+    PatchList->append(newPatch);
 
 
     //delete temporary stupid stuff
@@ -811,7 +836,37 @@ QList<LappedPatch>* LappedUtils::generatePatches(GLMmodel* model, polyHull* poly
     }                       //**
     //ENDWHILE MESH NOT COvERED*
 
+    return PatchList;
+}
 
+void LappedUtils::vizualizePatch(LappedPatch* patch, QImage* img)
+{
+    QPainter patr(img);
+    patr.setPen(Qt::black);
+    QHash<PatchVert*, vec2<float> >* UVs = patch->uvs;
 
+    for(int i=0;i<patch->tris->size();i++)
+    {
+        PatchTri* pt = patch->tris->at(i);
+        drawEdgeFromUV(img, &patr, UVs->value(pt->v0), UVs->value(pt->v1));
+        drawEdgeFromUV(img, &patr, UVs->value(pt->v1), UVs->value(pt->v2));
+        drawEdgeFromUV(img, &patr, UVs->value(pt->v2), UVs->value(pt->v0));
+    }
+    //draw seed in red because why not
+    patr.setPen(Qt::red);
+    PatchTri* pt = patch->seed;
+    drawEdgeFromUV(img, &patr, UVs->value(pt->v0), UVs->value(pt->v1));
+    drawEdgeFromUV(img, &patr, UVs->value(pt->v1), UVs->value(pt->v2));
+    drawEdgeFromUV(img, &patr, UVs->value(pt->v2), UVs->value(pt->v0));
+    patr.end();
+}
+void LappedUtils::drawEdgeFromUV(QImage* img, QPainter* patr, vec2<float> v0, vec2<float>v1)
+{
+    int x0,y0,x1,y1;
+    x0 = v0.x * img->width();
+    y0 = (1.0-v0.y) * img->height();
+    x1 = v1.x * img->width();
+    y1 = (1.0-v1.y) * img->height();
+    patr->drawLine(x0,y0,x1,y1);
 
 }

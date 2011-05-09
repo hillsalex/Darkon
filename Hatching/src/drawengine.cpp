@@ -100,9 +100,9 @@ DrawEngine::DrawEngine(const QGLContext *context,int w,int h, GLWidget* widget) 
     m_widget = widget;
 
     //m_shots->append(  new testShot(this, &shader_programs_, &textures_, &models_));
-    m_shots->append(  new modelShot(this, &shader_programs_, &textures_, &models_));
+    //m_shots->append(  new modelShot(this, &shader_programs_, &textures_, &models_));
     //m_shots->append(  new SphereShot(this, &shader_programs_, &textures_, &models_));
-    //m_shots->append(  new MPSandbox(this, &shader_programs_, &textures_, &models_));
+    m_shots->append(  new MPSandbox(this, &shader_programs_, &textures_, &models_));
 
     m_shots->at(m_curShot)->begin();
     /****************************************/
@@ -179,6 +179,9 @@ void DrawEngine::load_models() {
     glmUnitize(models_["torushd"].model);
     models_["torushd"].idx = glmList(models_["torushd"].model,GLM_SMOOTH);
 
+    models_["cube"].model = glmReadOBJ(  "../Hatching/src/models/cube.obj"  );
+    glmUnitize(models_["torushd"].model);
+    models_["cube"].idx = glmList(models_["cube"].model,GLM_SMOOTH);
 
 }
 /**
