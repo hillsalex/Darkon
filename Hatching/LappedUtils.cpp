@@ -868,5 +868,4 @@ void LappedUtils::drawEdgeFromUV(QImage* img, QPainter* patr, vec2<float> v0, ve
     x1 = v1.x * img->width();
     y1 = (1.0-v1.y) * img->height();
     patr->drawLine(x0,y0,x1,y1);
-
 }
