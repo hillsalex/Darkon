@@ -195,9 +195,9 @@ struct polyHull
         a = isectAnyEdge(s0*imgw,(1.0-t0)*imgh, s1*imgw, (1.0-t1)*imgh);
         b = isInteriorPt(s0*imgw,(1.0-t0)*imgh);
         c = isInteriorPt(s1*imgw,(1.0-t1)*imgh);
-        if(a)cout<<"edge intersected"<<endl;
+        /*if(a)cout<<"edge intersected"<<endl;
         if(b)cout<<"v0 inside"<<endl;
-        if(c)cout<<"v1 inside"<<endl;
+        if(c)cout<<"v1 inside"<<endl;*/
         return a||b||c;
     }
 
@@ -297,6 +297,9 @@ public:
                                    double x1, double y1, double r1,
                                    double *xi, double *yi,
                                    double *xi_prime, double *yi_prime);
+    void drawFromPatches(QList<LappedPatch*>* patches, GLMmodel* mod);
+
+    void DrawSinglePatch(QList<LappedPatch*>* patches, GLMmodel* mod, int patch);
 };
 
 #endif // LAPPEDUTILS_H

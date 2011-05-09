@@ -4,6 +4,8 @@
 #include <shot.h>
 #include "Sphere.h"
 #include <math/CS123Algebra.h>
+#include <QList>
+#include <LappedUtils.h>
 class TAMstroke;
 
 
@@ -30,6 +32,9 @@ public:
     //uchar** genTAM(int sizes,int tones,int maxwidth);
     //void saveTAM(QString path, uchar** TAM, int tones, int sizes, int maxw);
     Sphere* sph;
+    LappedUtils* lu;
+    QList<LappedPatch*>* LP;
+    GLMmodel* mod;
 
 };
 

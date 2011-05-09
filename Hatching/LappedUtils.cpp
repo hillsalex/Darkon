@@ -162,7 +162,7 @@ void printVector4(Vector4* v)
 
 void LappedUtils::assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v1st, vec2<float> &v2st)
 {
-    float scale = 0.5;
+    float scale = .5;
     Vector4 A,B,C;
     A = seed->v0->pos;
     B = seed->v1->pos;
@@ -697,9 +697,12 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
     QHash<QPair<PatchVert*,PatchVert*>,PatchEdge*>* edgesMade = new QHash<QPair<PatchVert*,PatchVert*>,PatchEdge*>();
     PatchTri** trisMade = new PatchTri*[model->numtriangles];
 
+    QList<PatchTri*>* trisInNOPatch = new QList<PatchTri*>();
+
     for(int i=0;i<model->numtriangles;i++)
     {
         PatchTri* pt = new PatchTri();
+        trisInNOPatch->append(pt);
         trisMade[i] = pt;
         pt->GLMtri = &glmtris[i];
         pt->tangent.x = model->triCurvatures[i*3];
@@ -722,9 +725,9 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                 vertsMade->insert(pt->GLMtri->vindices[vi],v);
                 v->tris = new QList<PatchTri*>();
                 v->GLMidx = pt->GLMtri->vindices[vi];
-                v->pos.x = glmverts[v->GLMidx];
-                v->pos.y = glmverts[v->GLMidx+1];
-                v->pos.z = glmverts[v->GLMidx+2];
+                v->pos.x = glmverts[3* v->GLMidx];
+                v->pos.y = glmverts[3* v->GLMidx+1];
+                v->pos.z = glmverts[3* v->GLMidx+2];
                 v->tris->append(pt);
                 vertsMade->insert(v->GLMidx,v);
             }
@@ -793,9 +796,13 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
 
 
     //WHILE MESH IS NOT COVERED******
-    for(int wtf=0; wtf<1; wtf++)//***
+    //for(int wtf=0; wtf<20; wtf++)//***
+    int wtf;
+    while(!trisInNOPatch->empty())// && wtf<150)
     {                           //***
         //WHILE MESH IS NOT COVERED******
+        cout<<"Patch "<< wtf<<endl;
+        wtf++;
 
 
         //choose seed triangle, get center point
@@ -809,7 +816,10 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
         //list of Tris for this specific patch!
         QList<PatchTri*>* PTris = new QList<PatchTri*>();
         //seed for this specific patch!
-        PatchTri* seed = trisMade[0];//rand()%model->numtriangles];
+        //PatchTri* seed = trisMade[0];//rand()%model->numtriangles];
+        PatchTri* seed = trisInNOPatch->at(0);
+        trisInNOPatch->removeFirst();
+
 
         vec2<float> seedUV0, seedUV1, seedUV2;
         assignSeedUV(seed, seedUV0, seedUV1, seedUV2);
@@ -834,6 +844,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
         edgesInPatch->insert(seed->e12);
         edgesInPatch->insert(seed->e20);
         trisInPatch->insert(seed);
+        trisInNOPatch->removeAll(seed);
         PTris->append(seed);
         //cout<<"PTris size init: "<<PTris->size()<<endl;
 
@@ -907,6 +918,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                     {//just add the triangle/edges!
                         edgesInPatch->insert(newEdge);
                         trisInPatch->insert(otherTri);
+                        trisInNOPatch->removeAll(otherTri);
                         PTris->append(otherTri);
                         edgeQ->enqueue(newEdge);
                     }
@@ -960,6 +972,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                         UVs->insert(newvert,sumUVs);
                         vertsInPatch->insert(newvert);
                         trisInPatch->insert(otherTri);
+                        trisInNOPatch->removeAll(otherTri);
                         if(!edgesInPatch->contains(otherTri->e01))
                         {edgesInPatch->insert(otherTri->e01);
                             edgeQ->enqueue(otherTri->e01);}
@@ -984,9 +997,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                             painter.drawLine(UVs->value(pt->v1).x*size , UVs->value(pt->v1).y*size , UVs->value(pt->v2).x*size , UVs->value(pt->v2).y*size);
                             painter.drawLine(UVs->value(pt->v0).x*size,UVs->value(pt->v0).y*size,UVs->value(pt->v2).x*size,UVs->value(pt->v2).y*size);
                         }
-                        int iii = 0;
-                        testOut->save("TESTTHIS.png");
-                        int iiiii = 0;
+
 
                     }
                 }
@@ -1120,4 +1131,69 @@ int LappedUtils::circle_circle_intersection(double x0, double y0, double r0,
     *yi_prime = y2 - ry;
 
     return 1;
+}
+
+void LappedUtils::drawFromPatches(QList<LappedPatch*>* patches, GLMmodel* mod)
+{int cp=1;
+    glClearColor(.5,.5,.5,1.0);
+//for(int cp=0; cp<patches->size(); cp++)
+    {
+    LappedPatch* patch = patches->at(cp);
+    QHash<PatchVert*, vec2<float> >* UVs = patch->uvs;
+
+    glBegin(GL_TRIANGLES);
+    for(int t=0; t<patch->tris->size(); t++)
+        {
+            PatchTri* tri = patch->tris->at(t);
+            glTexCoord2f(UVs->value(tri->v0).x, UVs->value(tri->v0).y );
+            //glVertex3f(tri->v0->pos.x, tri->v0->pos.y, tri->v0->pos.z);
+
+            //glVertex3fv(&model->vertices[3 * triangle->vindices[2]]);
+
+            //Draw the GLMtriangle
+            glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[0]]);
+
+            glTexCoord2f(UVs->value(tri->v1).x, UVs->value(tri->v1).y );
+            //glVertex3f(tri->v1->pos.x, tri->v1->pos.y, tri->v1->pos.z);
+            glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[1]]);
+
+            glTexCoord2f(UVs->value(tri->v2).x, UVs->value(tri->v2).y );
+            //glVertex3f(tri->v2->pos.x, tri->v2->pos.y, tri->v2->pos.z);
+            glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[2]]);
+        }
+    glEnd();
+    }
+}
+
+void LappedUtils::DrawSinglePatch(QList<LappedPatch*>* patches, GLMmodel* mod, int patch)
+{
+    int cp=patch;
+        glClearColor(.5,.5,.5,1.0);
+    //for(int cp=0; cp<patches->size(); cp++)
+        {
+        LappedPatch* patch = patches->at(cp);
+        QHash<PatchVert*, vec2<float> >* UVs = patch->uvs;
+
+        glBegin(GL_TRIANGLES);
+        for(int t=0; t<patch->tris->size(); t++)
+            {
+                PatchTri* tri = patch->tris->at(t);
+                glTexCoord2f(UVs->value(tri->v0).x, UVs->value(tri->v0).y );
+                //glVertex3f(tri->v0->pos.x, tri->v0->pos.y, tri->v0->pos.z);
+
+                //glVertex3fv(&model->vertices[3 * triangle->vindices[2]]);
+
+                //Draw the GLMtriangle
+                glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[0]]);
+
+                glTexCoord2f(UVs->value(tri->v1).x, UVs->value(tri->v1).y );
+                //glVertex3f(tri->v1->pos.x, tri->v1->pos.y, tri->v1->pos.z);
+                glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[1]]);
+
+                glTexCoord2f(UVs->value(tri->v2).x, UVs->value(tri->v2).y );
+                //glVertex3f(tri->v2->pos.x, tri->v2->pos.y, tri->v2->pos.z);
+                glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[2]]);
+            }
+        glEnd();
+        }
 }

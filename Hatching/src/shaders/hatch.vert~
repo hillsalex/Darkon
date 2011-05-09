@@ -4,7 +4,6 @@ uniform sampler2D tone2;
 uniform sampler2D tone3;
 uniform sampler2D tone4;
 uniform sampler2D tone5;
-uniform sampler2D alph;
 varying float lightIntensity;
 varying vec4 _origTexCoord;
 

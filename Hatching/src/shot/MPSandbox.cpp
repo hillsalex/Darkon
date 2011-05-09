@@ -32,12 +32,12 @@ void MPSandbox::begin()
 {
     QImage img;
     img.load("/home/mprice/Desktop/Patch/PatchMask.png");
-    LappedUtils* lu = new LappedUtils();
+    lu = new LappedUtils();
     MeshOperator* mo = new MeshOperator();
-    GLMmodel* mod = models_->value("sphere").model;
+    mod = models_->value("sphere").model;
     mo->calculateCurvatures(mod);
 
-    polyHull* pHull = lu->getPolyHull(&img,6);
+    polyHull* pHull = lu->getPolyHull(&img,10);
 
     //DEBUG DRAW OUTPUT
     /*QPainter patr(&img);
@@ -94,13 +94,119 @@ void MPSandbox::begin()
     }*/
 
 
-    QList<LappedPatch*>* LP = lu->generatePatches(mod,pHull);
+    LP = lu->generatePatches(mod,pHull);
     cout<<"got patches.  patches: "<<LP->size()<<endl;
     cout<<"patch 1 tris: "<<LP->at(0)->tris->size()<<endl;
     //lu->printPatchTri2d(LP->at(0)->tris->at(0));
-    lu->vizualizePatch(LP->at(0),&img);
-    img.save("Collision.png","PNG");
 
+
+    lu->vizualizePatch(LP->at(0),&img);
+    img.save("/home/mprice/Desktop/Patch/realPatch.png","PNG");
+    img.load("/home/mprice/Desktop/Patch/PatchMask.png");
+    lu->vizualizePatch(LP->at(1),&img);
+    img.save("/home/mprice/Desktop/Patch/realPatch2.png","PNG");
+    img.load("/home/mprice/Desktop/Patch/PatchMask.png");
+    lu->vizualizePatch(LP->at(2),&img);
+    img.save("/home/mprice/Desktop/Patch/realPatch3.png","PNG");
+    img.load("/home/mprice/Desktop/Patch/PatchMask.png");
+    lu->vizualizePatch(LP->at(3),&img);
+    img.save("/home/mprice/Desktop/Patch/realPatch4.png","PNG");
+    img.load("/home/mprice/Desktop/Patch/PatchMask.png");
+    lu->vizualizePatch(LP->at(4),&img);
+    img.save("/home/mprice/Desktop/Patch/realPatch5.png","PNG");
+    img.load("/home/mprice/Desktop/Patch/PatchMask.png");
+
+
+
+
+
+
+
+
+
+
+
+    TAMGenerator tgen;
+    int TAMtones = 6;
+    int TAMsizes = 4;
+    int TAMmaxw = 256;
+    QImage** imgTAM = tgen.ldImgTAM("../Hatching/src/TAM/",TAMtones,TAMsizes);
+    glShadeModel(GL_SMOOTH);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHT0);
+    float lightpos[4];
+    lightpos[0]=0.f;
+    lightpos[1]=-2.f;
+    lightpos[2]=-1.f;
+    lightpos[3]=0.f;
+    glLightfv(GL_LIGHT0,GL_POSITION,lightpos);
+
+    glMatrixMode(GL_TEXTURE);
+    glScalef(4,4,4);
+    glTranslatef(0.5, 0.5, 0);
+    glRotatef(90.0, 0, 0, 1);
+    glTranslatef(-0.5, -0.5, 0);
+    glMatrixMode(GL_MODELVIEW);
+
+    glEnable(GL_TEXTURE_2D);
+
+    GLuint tid[7];
+    glGenTextures(7,tid);
+
+    glClearColor(1.0,1.0,1.0,1.0);
+
+    for(int i=0;i<6;i++)
+    {
+    glActiveTexture(GL_TEXTURE0+i);
+    glBindTexture(GL_TEXTURE_2D,tid[i]);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 3);
+    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+
+
+    QImage tex = QGLWidget::convertToGLFormat(*imgTAM[3*TAMtones+i]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F_ARB, TAMmaxw, TAMmaxw, 0, GL_BGRA, GL_UNSIGNED_BYTE, tex.bits());
+    QImage tex2 = QGLWidget::convertToGLFormat(*imgTAM[2*TAMtones+i]);
+    glTexImage2D(GL_TEXTURE_2D, 1, GL_RGBA32F_ARB, tex2.width(), tex2.width(), 0, GL_BGRA, GL_UNSIGNED_BYTE, tex2.bits());
+    QImage tex3 = QGLWidget::convertToGLFormat(*imgTAM[1*TAMtones+i]);
+    glTexImage2D(GL_TEXTURE_2D, 2, GL_RGBA32F_ARB, tex3.width(), tex3.width(), 0, GL_BGRA, GL_UNSIGNED_BYTE, tex3.bits());
+    QImage tex4 = QGLWidget::convertToGLFormat(*imgTAM[0*TAMtones+i]);
+    glTexImage2D(GL_TEXTURE_2D, 3, GL_RGBA32F_ARB, tex4.width(), tex4.width(), 0, GL_BGRA, GL_UNSIGNED_BYTE, tex4.bits());
+
+    }
+
+    //our alpha blob!
+    glActiveTexture(GL_TEXTURE0+6);
+    glBindTexture(GL_TEXTURE_2D,tid[6]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 3);
+    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+    QImage atex = QGLWidget::convertToGLFormat(img);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB, img.width(), img.height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, atex.bits());
+
+
+    //SHADER
+    QGLShaderProgram* shd = new QGLShaderProgram();
+    shd->addShaderFromSourceFile(QGLShader::Vertex,"../Hatching/src/shaders/hatch.vert");
+    shd->addShaderFromSourceFile(QGLShader::Fragment,"../Hatching/src/shaders/hatch.frag");
+    shd->link();
+    shd->bind();
+    shd->setUniformValue("tone0",0);
+    shd->setUniformValue("tone1",1);
+    shd->setUniformValue("tone2",2);
+    shd->setUniformValue("tone3",3);
+    shd->setUniformValue("tone4",4);
+    shd->setUniformValue("tone5",5);
+    shd->setUniformValue("alph",6);
+    //shd->release();
 }
 
 
@@ -113,6 +219,37 @@ void MPSandbox::update()
 
 void MPSandbox::draw()
 {
-    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+    /*float lightpos[4];
+    lightpos[0]=1.2f;
+    lightpos[1]=-2.f * sin(m_framesElapsed/10.0);
+    lightpos[2]=-1.f;
+    lightpos[3]=0.f;
+    glLightfv(GL_LIGHT0,GL_POSITION,lightpos);*/
+
+    if(m_framesElapsed%100==0)
+    {glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+        if(m_framesElapsed%200==0)
+        {
+            glEnable(GL_DEPTH_TEST);
+        }
+        else
+        {
+            glDisable(GL_DEPTH_TEST);
+        }
+    }
+
+    //glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    glEnable(GL_LIGHT0);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_BLEND);
+    //glDisable(GL_DEPTH_TEST);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
     glEnable(GL_TEXTURE_2D);
+    //lu->drawFromPatches(LP, mod);
+    lu->DrawSinglePatch(LP,mod,(m_framesElapsed)%LP->size());
+    //glTranslatef(0.5,0,0);
+    //glCallList(models_->value("teapot").idx);
+
 }

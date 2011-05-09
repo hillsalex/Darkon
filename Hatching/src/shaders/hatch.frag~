@@ -42,7 +42,7 @@ void main()
 		gl_FragColor = mix(color_0,vec4(1.0,1.0,1.0,1.0),(lightIntensity-p5)/(p6-p5));
 	else
 		gl_FragColor = vec4(1.0,1.0,1.0,1.0);
-	//gl_FragColor = texture2D(alph, _origTexCoord);
+	gl_FragColor = texture2D(alph, _origTexCoord);
 	gl_FragColor.a = 1.0 - texture2D(alph, _origTexCoord).x;
 
 	//gl_FragColor = texture2DProj(alph,gl_TexCoord[0]);
