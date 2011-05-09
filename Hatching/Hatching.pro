@@ -30,13 +30,13 @@ src/SparseMatrix.inl\
     src/shot/SphereShot.cpp \
     src/meshoperator.cpp \
     LappedUtils.cpp \
-    src/meshoperator.cpp \
     src/alglib/solvers.cpp \
     src/alglib/linalg.cpp \
     src/alglib/ap.cpp \
     src/alglib/alglibmisc.cpp \
     src/alglib/alglibinternal.cpp \
-    src/shot/modelshot.cpp
+    src/shot/modelshot.cpp \
+    src/shot/BYSandbox.cpp
 
 
 
@@ -63,14 +63,14 @@ src/matrix.h\
     src/shot/SphereShot.h \
     src/meshoperator.h \
     LappedUtils.h \
-    src/meshoperator.h \
     src/alglib/stdafx.h \
     src/alglib/solvers.h \
     src/alglib/linalg.h \
     src/alglib/ap.h \
     src/alglib/alglibmisc.h \
     src/alglib/alglibinternal.h \
-    src/shot/modelshot.h
+    src/shot/modelshot.h \
+    src/shot/BYSandbox.h
 
 FORMS += mainwindow.ui
 INCLUDEPATH += src src/shot src/lib src/glm \
