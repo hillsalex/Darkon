@@ -34,7 +34,7 @@ void MPSandbox::begin()
     img.load("/home/mprice/Desktop/Patch/PatchMask.png");
     LappedUtils* lu = new LappedUtils();
     MeshOperator* mo = new MeshOperator();
-    GLMmodel* mod = models_->value("sphere").model;
+    GLMmodel* mod = models_->value("cube").model;
     mo->calculateCurvatures(mod);
 
     polyHull* pHull = lu->getPolyHull(&img,6);
@@ -95,11 +95,9 @@ void MPSandbox::begin()
     QList<LappedPatch*>* LP = lu->generatePatches(mod,pHull);
     cout<<"got patches.  patches: "<<LP->size()<<endl;
     cout<<"patch 1 tris: "<<LP->at(0)->tris->size()<<endl;
+    lu->printPatchTri2d(LP->at(0)->tris->at(0));
     lu->vizualizePatch(LP->at(0),&img);
-    img.save("Collision.png","PNG");
-
-
-
+    img.save("/home/mprice/Desktop/Patch/Collision.png","PNG");
 
 }
 

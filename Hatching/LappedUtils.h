@@ -133,7 +133,7 @@ struct polyHull
                 numIntersections++;
             }
         }
-        cout<<"numIntersections: "<<numIntersections<<endl;
+        //cout<<"numIntersections: "<<numIntersections<<endl;
         return numIntersections%2==1;
     }
     //returns true if the segment intersects the hull
@@ -242,6 +242,8 @@ public:
     void assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v1st, vec2<float> &v2st);
     void vizualizePatch(LappedPatch* patch, QImage* img);
     void drawEdgeFromUV(QImage* img, QPainter* patr, vec2<float> v0, vec2<float>v1);
+    void printPatchTri2d(PatchTri* pt);
+    void printPatchTri3d(PatchTri* pt);
 };
 
 #endif // LAPPEDUTILS_H

@@ -27,12 +27,8 @@ vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, ve
 {
 
 
-    //Vector4 AC(C->pos.x - A->pos.x, C->pos.y - A->pos.y, C->pos.z - A->pos.z,0);
-    Vector4 AC = C->pos-A->pos;
-
-    Vector4 AB = B->pos-A->pos;
-    AC.w=0;
-    AB.w=0;
+    Vector4 AC = C->pos - A->pos;
+    Vector4 AB = B->pos - A->pos;
 
     Vector4 AB_r = AB * getRotMat(Vector4(A->pos.x,A->pos.y,A->pos.z,0),AC.cross(AB),M_PI/2.0);
     float x = AC.dot(AB) / AB.getMagnitude2();
@@ -621,6 +617,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
             else
             {
                 v = new PatchVert();
+                vertsMade->insert(pt->GLMtri->vindices[vi],v);
                 v->tris = new QList<PatchTri*>();
                 v->GLMidx = pt->GLMtri->vindices[vi];
                 v->pos.x = glmverts[v->GLMidx];
@@ -704,40 +701,41 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
         //assign UVS to PatchTri s.t. centered at .5,.5 and tangent is aligned with texture //HOW???? NEED BITANGENT OR NO?  HOW TO DETERMINE SCALE?
         //enqueue edges of triangle
 
-        //DONT DELETE THESE THINGS!
-        //hash table of uvs for this specific patch!
-        QHash<PatchVert*,vec2<float> >* UVs = new QHash<PatchVert*, vec2<float> >();
-        //list of Tris for this specific patch!
-        QList<PatchTri*>* PTris = (new QList<PatchTri*>());
-        //seed for this specific patch!
-        PatchTri* seed = trisMade[rand()%model->numtriangles];
+   //DONT DELETE THESE THINGS!
+    //hash table of uvs for this specific patch!
+    QHash<PatchVert*,vec2<float> >* UVs = new QHash<PatchVert*, vec2<float> >();
+    //list of Tris for this specific patch!
+    QList<PatchTri*>* PTris = new QList<PatchTri*>();
+    //seed for this specific patch!
+    PatchTri* seed = trisMade[rand()%model->numtriangles];
 
-        vec2<float> seedUV0, seedUV1, seedUV2;
-        assignSeedUV(seed, seedUV0, seedUV1, seedUV2);
-        UVs->insert(seed->v0,seedUV0);
-        UVs->insert(seed->v1,seedUV1);
-        UVs->insert(seed->v2,seedUV2);
+    vec2<float> seedUV0, seedUV1, seedUV2;
+    assignSeedUV(seed, seedUV0, seedUV1, seedUV2);
+    UVs->insert(seed->v0,seedUV0);
+    UVs->insert(seed->v1,seedUV1);
+    UVs->insert(seed->v2,seedUV2);
 
-        QQueue<PatchEdge*> edgeQ = *(new QQueue<PatchEdge*>());
-        edgeQ.enqueue(seed->e01);
-        edgeQ.enqueue(seed->e12);
-        edgeQ.enqueue(seed->e20);
+    QQueue<PatchEdge*>* edgeQ = new QQueue<PatchEdge*>();
+    edgeQ->enqueue(seed->e01);
+    edgeQ->enqueue(seed->e12);
+    edgeQ->enqueue(seed->e20);
 
-        //make visitedSets of edges, verts, tris
-        //mark everything from seed as visited
-        QSet<PatchVert*> vertsInPatch = *(new QSet<PatchVert*>());
-        QSet<PatchEdge*> edgesInPatch = *(new QSet<PatchEdge*>());
-        QSet<PatchTri*> trisInPatch = *(new QSet<PatchTri*>());
-        vertsInPatch.insert(seed->v0);
-        vertsInPatch.insert(seed->v1);
-        vertsInPatch.insert(seed->v2);
-        edgesInPatch.insert(seed->e01);
-        edgesInPatch.insert(seed->e12);
-        edgesInPatch.insert(seed->e20);
-        trisInPatch.insert(seed);
-        PTris->append(seed);
+    //make visitedSets of edges, verts, tris
+    //mark everything from seed as visited
+    QSet<PatchVert*>* vertsInPatch = new QSet<PatchVert*>();
+    QSet<PatchEdge*>* edgesInPatch = new QSet<PatchEdge*>();
+    QSet<PatchTri*>* trisInPatch = new QSet<PatchTri*>();
+    vertsInPatch->insert(seed->v0);
+    vertsInPatch->insert(seed->v1);
+    vertsInPatch->insert(seed->v2);
+    edgesInPatch->insert(seed->e01);
+    edgesInPatch->insert(seed->e12);
+    edgesInPatch->insert(seed->e20);
+    trisInPatch->insert(seed);
+    PTris->append(seed);
+    cout<<"PTris size init: "<<PTris->size()<<endl;
 
-        //while Q not empty
+    //while Q not empty
         //dequeue edge e
         //find other triangle in edge
         //if tri is not in patch
@@ -755,23 +753,20 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
         //then add triangle like above: enq new edges, mark any new edges, vert, tri as visited
         //patch is done, delete visitedSets, continue to next patch
 
-        int III = 0;
-        while(!edgeQ.isEmpty()&&III<2)
-        {
-            III++;
-            PatchEdge* e = edgeQ.dequeue();
+    while(!edgeQ->isEmpty())
+    {
+        PatchEdge* e = edgeQ->dequeue();
             PatchTri* otherTri;
-            if(trisInPatch.contains(e->t1))
+            if(trisInPatch->contains(e->t1))
             {
-                cout << e->ntris << endl;
-                if(e->ntris==2 && !trisInPatch.contains(e->t2))
+                if(e->ntris==2 && !trisInPatch->contains(e->t2))
                 {
                     otherTri = e->t2;
                 }
                 else
                 {
-                    cout<<"both tris already in patch or edge only has one tri"<<endl;
-                    continue;
+                 cout<<"both tris already in patch or edge only has one tri"<<endl;                 
+                 continue;
                 }
             }
             else if(e->ntris>=1)
@@ -792,25 +787,25 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                 PatchEdge* newEdge;//only relevant if theres only one
                 PatchVert* newvert = otherTri->otherVert(e->v0, e->v1);
                 //if homeomorphic to a disk
-                bool newvertinpatch = vertsInPatch.contains(newvert);
+                bool newvertinpatch = vertsInPatch->contains(newvert);
                 int numNewEdgesInPatch=0;
-                if(edgesInPatch.contains(otherTri->e01)){
+                if(edgesInPatch->contains(otherTri->e01)){
                     numNewEdgesInPatch++;
                     newEdge=otherTri->e01;}
-                if(edgesInPatch.contains(otherTri->e12)){
+                if(edgesInPatch->contains(otherTri->e12)){
                     numNewEdgesInPatch++;
                     newEdge=otherTri->e12;}
-                if(edgesInPatch.contains(otherTri->e20)){
+                if(edgesInPatch->contains(otherTri->e20)){
                     numNewEdgesInPatch++;
                     newEdge=otherTri->e20;}
                 if( !newvertinpatch || numNewEdgesInPatch==1)
                 {
                     if(newvertinpatch)
                     {//just add the triangle/edges!
-                        edgesInPatch.insert(newEdge);
-                        trisInPatch.insert(otherTri);
+                        edgesInPatch->insert(newEdge);
+                        trisInPatch->insert(otherTri);
                         PTris->append(otherTri);
-                        edgeQ.enqueue(newEdge);
+                        edgeQ->enqueue(newEdge);
                     }
                     else
                     {//gotta add the new vertex
@@ -827,21 +822,21 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                             PatchTri* curtri = newvert->tris->at(ti);
                             PatchEdge* mappedE;
                             PatchVert *_A,*_B;//args to estimateUV
-                            if(edgesInPatch.contains(curtri->e01))
+                            if(edgesInPatch->contains(curtri->e01))
                             {
                                 assert(newvert == curtri->v2);
                                 mappedE = curtri->e01;
                                 _A = curtri->v0;
                                 _B = curtri->v1;
                             }
-                            else if(edgesInPatch.contains(curtri->e12))
+                            else if(edgesInPatch->contains(curtri->e12))
                             {
                                 assert(newvert == curtri->v0);
                                 mappedE = curtri->e12;
                                 _A = curtri->v1;
                                 _B = curtri->v2;
                             }
-                            else if(edgesInPatch.contains(curtri->e20))
+                            else if(edgesInPatch->contains(curtri->e20))
                             {
                                 assert(newvert == curtri->v1);
                                 mappedE = curtri->e20;
@@ -857,17 +852,17 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                         sumUVs = sumUVs / (1.0+numUVs);
                         //add all the crap
                         UVs->insert(newvert,sumUVs);
-                        vertsInPatch.insert(newvert);
-                        trisInPatch.insert(otherTri);
-                        if(!edgesInPatch.contains(otherTri->e01))
-                        {edgesInPatch.insert(otherTri->e01);
-                            edgeQ.enqueue(otherTri->e01);}
-                        if(!edgesInPatch.contains(otherTri->e12))
-                        {edgesInPatch.insert(otherTri->e12);
-                            edgeQ.enqueue(otherTri->e12);}
-                        if(!edgesInPatch.contains(otherTri->e20))
-                        {edgesInPatch.insert(otherTri->e20);
-                            edgeQ.enqueue(otherTri->e20);}
+                        vertsInPatch->insert(newvert);
+                        trisInPatch->insert(otherTri);
+                        if(!edgesInPatch->contains(otherTri->e01))
+                            {edgesInPatch->insert(otherTri->e01);
+                             edgeQ->enqueue(otherTri->e01);}
+                        if(!edgesInPatch->contains(otherTri->e12))
+                            {edgesInPatch->insert(otherTri->e12);
+                             edgeQ->enqueue(otherTri->e12);}
+                        if(!edgesInPatch->contains(otherTri->e20))
+                        {edgesInPatch->insert(otherTri->e20);
+                         edgeQ->enqueue(otherTri->e20);}
                         PTris->append(otherTri);
                     }
                 }
@@ -926,4 +921,12 @@ void LappedUtils::drawEdgeFromUV(QImage* img, QPainter* patr, vec2<float> v0, ve
     x1 = v1.x * img->width();
     y1 = (1.0-v1.y) * img->height();
     patr->drawLine(x0,y0,x1,y1);
+}
+void LappedUtils::printPatchTri2d(PatchTri* pt)
+{
+    cout<<"2dTri: ("<<pt->v0->s<<","<<pt->v0->t<<") ("<<pt->v1->s<<","<<pt->v1->t<<") ("<<pt->v2->s<<","<<pt->v2->t<<")"<<endl;
+}
+void LappedUtils::printPatchTri3d(PatchTri* pt)
+{
+    cout<<"2dTri: "<<pt->v0->pos<<" "<<pt->v1->pos<<" "<<pt->v2->pos<<endl;
 }
