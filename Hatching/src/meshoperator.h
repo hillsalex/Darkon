@@ -10,6 +10,7 @@ class MeshOperator
 public:
     MeshOperator();
     void calculateCurvatures(GLMmodel* model);
+    void TestPatch();
 };
 
 #endif // MESHOPERATOR_H

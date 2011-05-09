@@ -1,6 +1,7 @@
 #include "LappedUtils.h"
 #include <QQueue>
 #include <QHash>
+#include <math.h>
 
 LappedUtils::LappedUtils()
 {
@@ -24,6 +25,8 @@ int LappedUtils::ccw(vert2d* p1,vert2d* p2,vert2d* p3)
 //Assuming A and B have correct UV coords and world space coords, return an estimate of C's UV coords
 vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst)
 {
+
+
     Vector4 AC(C->pos.x - A->pos.x, C->pos.y - A->pos.y, C->pos.z - A->pos.z,0);
     Vector4 AB(B->pos.x - A->pos.x, B->pos.y - A->pos.y, B->pos.z - A->pos.z,0);
 
@@ -38,6 +41,8 @@ vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, ve
     AB_rp.x = ABp.y;
     AB_rp.y = -ABp.x;
 
+
+
     vec2<float> Cp; //Ap,Bp
    // Ap.x = Ast.x; Ap.y = Ast.y; Bp.x = B->s; Bp.y = B->t;
     Cp = Ast + x*ABp + y*AB_rp;
@@ -47,43 +52,81 @@ vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, ve
     return Cp;
 }
 
+
+void printVector4(Vector4* v)
+{
+
+    cout << '[' << v->x << " , " << v->y << " , " << v->z << ',' << v->w << ']' << endl;
+}
+
+
 void LappedUtils::assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v1st, vec2<float> &v2st)
 {
+    float scale = 0.5;
     Vector4 A,B,C;
     A = seed->v0->pos;
     B = seed->v1->pos;
     C = seed->v2->pos;
-    //get normalized normal vector
-    Vector4 norm = ((B-A).cross(C-A)).getNormalized();
-    //find angle b/w norm and <0,0,1>
-    double angle = acos(norm.dot(Vector4(0,0,1.0,0)));
-    //get center pt
+    A.w = 1;
+    B.w = 1;
+    C.w = 1;
+
     Vector4 ctr = (A+B+C)/3.0;
-    //get rotation matrix
-    Matrix4x4 rotMat = getRotMat(ctr,norm.cross(Vector4(0,0,1.0,0)),angle);
-    //rotate
+    ctr.w=0;
     Vector4 Ap, Bp, Cp, Tp;
-    Ap = A*rotMat;
-    Bp = B*rotMat;
-    Cp = C*rotMat;
-    Tp = seed->tangent * rotMat;
-    double avgLen = (Ap.getMagnitude() + Bp.getMagnitude() + Cp.getMagnitude())/3.0;
-    ctr = (Ap+Bp+Cp)/3.0;
-    Ap = Ap - ctr + Vector4(0.5,0.5,0,0);
-    Bp = Bp - ctr + Vector4(0.5,0.5,0,0);
-    Cp = Cp - ctr + Vector4(0.5,0.5,0,0);
-    //we're forgetting about alignment for now, just have a similar triangle centered at <0.5,0.5>
-    Ap = Ap*0.25/avgLen;
-    Bp = Bp*0.25/avgLen;
-    Cp = Cp*0.25/avgLen;
-    /*
-    seed->v0->s = Ap.x;
-    seed->v0->t = Ap.y;
-    seed->v1->s = Bp.x;
-    seed->v1->t = Bp.y;
-    seed->v2->s = Cp.x;
-    seed->v2->t = Cp.y;
-    */
+    Matrix4x4 transMat = getTransMat(-ctr);
+    Ap = transMat*A;
+    Bp = transMat*B;
+    Cp = transMat*C;
+
+    Ap.w=0;
+    Bp.w=0;
+    Cp.w=0;
+
+    Vector4 norm = ((Bp-Ap).cross(Cp-Ap)).getNormalized();
+    printVector4(norm);
+    double angle = acos(norm.dot(Vector4(0,0,1.0,0)));
+    cout << "angle between normal and plane z=1: " << angle << endl;
+    Matrix4x4 rotMat = getRotMat(Vector4(0,0,0,0),norm.cross(Vector4(0,0,1.0,0)).getNormalized(),angle);
+    Ap.w = 1;
+    Bp.w = 1;
+    Cp.w = 1;
+
+    Ap = rotMat*Ap;
+    Bp = rotMat*Bp;
+    Cp = rotMat*Cp;
+    Tp = rotMat*seed->tangent;
+    Ap.w = 0;
+    Bp.w = 0;
+    Cp.w = 0;
+
+
+    double avgLen = max(max((Ap-Cp).getMagnitude(),(Ap-Bp).getMagnitude()),(Cp-Bp).getMagnitude());
+    Ap = Ap*scale/avgLen;
+    Bp = Bp*scale/avgLen;
+    Cp = Cp*scale/avgLen;
+    Ap.w = 1;
+    Bp.w = 1;
+    Cp.w = 1;
+    Tp.w = 0;
+
+    seed->tangent = Tp;
+    Tp.normalize();
+    double tanAngle = acos(Vector4(0,1,0,0).dot(Tp));
+    Matrix4x4 tanMat = getRotMat(Vector4(0,0,0,0),Vector4(0,1,0,0).cross(Tp),tanAngle);
+    Ap = tanMat*Ap;
+    Bp = tanMat*Bp;
+    Cp = tanMat*Cp;
+    Ap.w = 1;
+    Bp.w = 1;
+    Cp.w = 1;
+
+    transMat = getTransMat(Vector4(.5,.5,0,0));
+    Ap = transMat*Ap;
+    Bp = transMat*Bp;
+    Cp = transMat*Cp;
+
+
     v0st.x = Ap.x;
     v0st.y = Ap.y;
     v1st.x = Bp.x;
@@ -95,8 +138,6 @@ void LappedUtils::assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v
 polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
 {
     QImage img = *blob;
-    //QImage img;
-    //img.load("/home/mprice/Desktop/Patch/PatchMask.png");
     int w = img.width();
     int h = img.height();
 
