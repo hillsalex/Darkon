@@ -847,6 +847,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                             else
                                 continue;
                             numUVs++;
+                            vec2<float> badguy = UVs->value( mappedE->otherTri(curtri)->otherVert(mappedE->v0,mappedE->v1));
                             sumUVs = sumUVs + estimateUV(_B,_A,newvert, UVs->value(_B), UVs->value(_A));
                         }
                         //sumUVs is actually now the UVs we want
