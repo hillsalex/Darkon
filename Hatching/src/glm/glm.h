@@ -37,6 +37,7 @@ typedef struct _GLMtriangle {
     GLuint nindices[3];           /* array of triangle normal indices */
     GLuint tindices[3];           /* array of triangle texcoord indices*/
     GLuint findex;                /* index of triangle facet normal */
+    GLfloat curvature[3];
     //GLuint nrvecini;
     GLuint vecini[3];
     bool visible;
@@ -81,7 +82,13 @@ typedef struct _GLMmodel {
     GLuint       numtriangles;    /* number of triangles in model */
     GLMtriangle* triangles;       /* array of triangles */
 
-    GLfloat * curvatures;   //Vertex curvatures
+
+    GLfloat * vertCurvatures;
+    GLfloat * curvCrossNormals;
+    GLfloat * vertMaxCurvatures;   //Vertex curvatures (maximum direction)
+
+    GLfloat * vertMinCurvatures; //Vertex curvatures (minimum direction)
+    GLfloat * triCurvatures;
 
     GLuint       nummaterials;    /* number of materials in model */
     GLMmaterial* materials;       /* array of materials */

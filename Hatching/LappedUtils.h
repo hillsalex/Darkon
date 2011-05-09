@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <math/CS123Algebra.h>
 #include <glm.h>
+#include <QHash>
 using std::cout;
 using std::endl;
 
@@ -71,8 +72,8 @@ struct polyHull
     int imgh;
     polyHull(QList<vert2d*>* vs, QList<edge2d*>* es):verts(vs),edges(es){}
     //returns true if the given segment intersects the given edge
-    bool isectEdge(edge2d* e, int x0, int y0, int x1, int y1)
-    {
+    bool isectEdge(edge2d* e, float x0, float y0, float x1, float y1)
+    {  // cout<<"isectEdge "<<x0<<","<<y0<<" "<<x1<<","<<y1<<" edge2d: "<<e->v1->x<<","<<e->v1->y <<") (" << e->v2->x << "," << e->v2->y << ")" << endl;
         if(x0==x1 && e->v1->x == e->v2->x)return false;//both vertical
         if(y0==y1 && e->v1->y == e->v2->y)return false;//both horizontal
         int isecx,isecy;
@@ -112,7 +113,7 @@ struct polyHull
         return true;
     }
     //returns true if the given segment intersects any edge in the hull
-    bool isectAnyEdge(int x0, int y0, int x1, int y1)
+    bool isectAnyEdge(float x0, float y0, float x1, float y1)
     {
         for(int i=0;i<edges->size();i++)
         {//just check intersection for every edge
@@ -120,52 +121,95 @@ struct polyHull
         }return false;
     }
     //returns true if the point is in the interior of the hull
-    bool isInteriorPt(int x, int y)
+    bool isInteriorPt(float x, float y)
     {
+        //cout<<"chkinterior: "<<x<<","<<y<<endl;
         //use segment (0,0) --> (x,y)
         int numIntersections=0;
         for(int i=0;i<edges->size();i++)
         {//just check intersection for every edge
-            if(isectEdge(edges->at(i),0,0,x,y))numIntersections++;
+            if(isectEdge(edges->at(i),0,0,x,y))
+            {//cout<<"isect ("<< edges->at(i)->v1->x <<","<<edges->at(i)->v1->y <<") (" << edges->at(i)->v2->x << "," << edges->at(i)->v2->y << ")" << endl;
+                numIntersections++;
+            }
         }
+        cout<<"numIntersections: "<<numIntersections<<endl;
+        return numIntersections%2==1;
     }
     //returns true if the segment intersects the hull
-    bool isectHull (int x0,int y0,int x1, int y1)
+    bool isectHull (float x0,float y0,float x1, float y1)
     {//A segment intersects the hull if A: it intersects an edge of the hull or B: one point is inside the hull
         return(isectAnyEdge(x0,y0,x1,y1) || isInteriorPt(x0,y0));
     }
     //basically the same as above, but first converts the UV coords into texture space coords (ints)
     bool isectHullUV(float s0, float t0, float s1, float t1)
-    {
-        return (isectAnyEdge(s0*imgw,(1.0-t0)*imgh, s1*imgw, (1.0-t1)*imgh) || isInteriorPt(s0*imgw,(1.0-t0)*imgh));
+    {   bool a,b,c;
+        a = isectAnyEdge(s0*imgw,(1.0-t0)*imgh, s1*imgw, (1.0-t1)*imgh);
+        b = isInteriorPt(s0*imgw,(1.0-t0)*imgh);
+        c = isInteriorPt(s1*imgw,(1.0-t1)*imgh);
+        if(a)cout<<"edge intersected"<<endl;
+        if(b)cout<<"v0 inside"<<endl;
+        if(c)cout<<"v1 inside"<<endl;
+        return a||b||c;
+    }
+
+    void print()
+    {   cout<<"PRINTING HULL"<<endl;
+        cout<<"verts: ("<<verts->size()<<")"<<endl;
+        for(int i=0; i<verts->size(); i++)
+        {
+            cout << "(" << verts->at(i)->x << "," << verts->at(i)->y <<")"<<endl;
+            verts->at(i)->print();
+        }
+        cout<<"edges: ("<<edges->size()<<")"<<endl;
+        for(int i=0; i<edges->size(); i++)
+            cout<<"("<< edges->at(i)->v1->x <<","<< edges->at(i)->v1->y <<") --- (" <<  edges->at(i)->v2->x <<","<<  edges->at(i)->v2->y << ")"<<endl;
     }
 };
 
 struct PatchTri;
 struct PatchVert
 {
+    //the texture coordinates (we assign these)
+    float s,t;//really should be outside since vary perpatch
+
+
     //the index of the x coordinate in the GLM vertex array
     int GLMidx;
     //the coordinate values
     //float x,y,z;
     Vector4 pos;
-    //the texture coordinates (we assign these)
-    float s,t;
     //the triangles that contain this vertex
     QList<PatchTri*>* tris;
-    PatchVert(){tris = new QList<PatchTri*>();}
+    PatchVert(){}
 };
 
-
+struct PatchEdge;
 struct PatchTri
 {
-    //the indices of the patchverts we made
+    //the patchverts we made
     PatchVert* v0;
     PatchVert* v1;
     PatchVert* v2;
+    //edges
+    PatchEdge* e01;
+    PatchEdge* e12;
+    PatchEdge* e20;
+
     //the GLM triangle (maybe some redundant information but w/e)
     _GLMtriangle* GLMtri;
     Vector4 tangent;
+
+    PatchVert* otherVert(PatchVert* _A, PatchVert* _B)
+    {
+        if(v0!= _A && v0!= _B)
+            return v0;
+        if(v1!= _A && v1!= _B)
+            return v1;
+        if(v2!= _A && v2!= _B)
+            return v2;
+        return NULL;
+    }
 };
 
 struct PatchEdge
@@ -179,13 +223,12 @@ struct PatchEdge
     void addTri(PatchTri* t){if(ntris==0){ntris++;t1=t;}else if(ntris==1){ntris++;t2=t;}else{cout<<"TRIED TO ADD MORE THAN TWO TRIANGLES TO AN EDGE"<<endl;}}
 };
 
-
 struct LappedPatch
 {
-    PatchTri seed;
-    QList<PatchTri*> tris;
+    PatchTri* seed;
+    QList<PatchTri*>* tris;
+    QHash<PatchVert*, vec2<float> >* uvs;
 };
-
 
 class LappedUtils
 {
@@ -194,10 +237,11 @@ public:
     int ccw(vert2d* p1,vert2d* p2,vert2d* p3);
     void printEdge(edge2d* e){cout<<"{("<<e->v1->x<<","<<e->v1->y<<") ("<<e->v2->x<<","<<e->v2->y<<")}"<<endl;}
     polyHull* getPolyHull(QImage* blob,int iterations);
-    QList<LappedPatch>* generatePatches(GLMmodel* model, polyHull* polyhull);
-    vec2<float> estimateUV(PatchVert* A, PatchVert* B, PatchVert* C);
-    void assignSeedUV(PatchTri* seed);
-
+    QList<LappedPatch*>* generatePatches(GLMmodel* model, polyHull* polyhull);
+    vec2<float> estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, vec2<float> Ast, vec2<float> Bst);
+    void assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v1st, vec2<float> &v2st);
+    void vizualizePatch(LappedPatch* patch, QImage* img);
+    void drawEdgeFromUV(QImage* img, QPainter* patr, vec2<float> v0, vec2<float>v1);
 };
 
 #endif // LAPPEDUTILS_H
