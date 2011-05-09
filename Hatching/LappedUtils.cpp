@@ -27,8 +27,12 @@ vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, ve
 {
 
 
-    Vector4 AC(C->pos.x - A->pos.x, C->pos.y - A->pos.y, C->pos.z - A->pos.z,0);
-    Vector4 AB(B->pos.x - A->pos.x, B->pos.y - A->pos.y, B->pos.z - A->pos.z,0);
+    //Vector4 AC(C->pos.x - A->pos.x, C->pos.y - A->pos.y, C->pos.z - A->pos.z,0);
+    Vector4 AC = C->pos-A->pos;
+
+    Vector4 AB = B->pos-A->pos;
+    AC.w=0;
+    AB.w=0;
 
     Vector4 AB_r = AB * getRotMat(Vector4(A->pos.x,A->pos.y,A->pos.z,0),AC.cross(AB),M_PI/2.0);
     float x = AC.dot(AB) / AB.getMagnitude2();
@@ -44,7 +48,7 @@ vec2<float> LappedUtils::estimateUV(PatchVert* A, PatchVert* B, PatchVert* C, ve
 
 
     vec2<float> Cp; //Ap,Bp
-   // Ap.x = Ast.x; Ap.y = Ast.y; Bp.x = B->s; Bp.y = B->t;
+    // Ap.x = Ast.x; Ap.y = Ast.y; Bp.x = B->s; Bp.y = B->t;
     Cp = Ast + x*ABp + y*AB_rp;
 
     //cout<<"AB: "<<AB<<" AC: "<<AC<<" AB_r: "<<AB_r<<" ABp: "<<ABp<<" AB_rp: "<<AB_rp<<" x: "<<x<<" y: "<<y<<" Ap:"<<Ap<<" Bp: "<<Bp<<" Cp: "<<Cp<<endl;
@@ -78,24 +82,28 @@ void LappedUtils::assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v
     Ap = transMat*A;
     Bp = transMat*B;
     Cp = transMat*C;
-
     Ap.w=0;
     Bp.w=0;
     Cp.w=0;
-
     Vector4 norm = ((Bp-Ap).cross(Cp-Ap)).getNormalized();
     printVector4(norm);
     double angle = acos(norm.dot(Vector4(0,0,1.0,0)));
     cout << "angle between normal and plane z=1: " << angle << endl;
-    Matrix4x4 rotMat = getRotMat(Vector4(0,0,0,0),norm.cross(Vector4(0,0,1.0,0)).getNormalized(),angle);
-    Ap.w = 1;
-    Bp.w = 1;
-    Cp.w = 1;
+    if (norm.cross(Vector4(0,0,1,0)).getMagnitude()>0.00001)
+    {
+        //cout << (norm.cross(Vector4(0,0,1,0))).getMagnitude() << endl;
+        cout << norm.cross(Vector4(0,0,1,0)) << endl;
+        Matrix4x4 rotMat = getRotMat(Vector4(0,0,0,0),norm.cross(Vector4(0,0,1.0,0)).getNormalized(),angle);
+        Ap.w = 1;
+        Bp.w = 1;
+        Cp.w = 1;
+        Ap = rotMat*Ap;
+        Bp = rotMat*Bp;
+        Cp = rotMat*Cp;
+        Tp = rotMat*seed->tangent;
+    }
+    else Tp=seed->tangent;
 
-    Ap = rotMat*Ap;
-    Bp = rotMat*Bp;
-    Cp = rotMat*Cp;
-    Tp = rotMat*seed->tangent;
     Ap.w = 0;
     Bp.w = 0;
     Cp.w = 0;
@@ -120,7 +128,6 @@ void LappedUtils::assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v
     Ap.w = 1;
     Bp.w = 1;
     Cp.w = 1;
-
     transMat = getTransMat(Vector4(.5,.5,0,0));
     Ap = transMat*Ap;
     Bp = transMat*Bp;
@@ -273,177 +280,200 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
     //at this point vs--->ve should be in the CLOCKWISE direction
     //one simplification pass:
 
-        //get four points to work on, and next one to start from
-            //if one of the points other than the first was vseed, set done flag
-            //arrange pointers, etc for our four points
+    //get four points to work on, and next one to start from
+    //if one of the points other than the first was vseed, set done flag
+    //arrange pointers, etc for our four points
 
-   for(int i=0;i<iterations;i++)
-   {
-      // cout<<"beginning. edgecount: "<<eLi->size()<<endl;
-
-       if(vseed->e1->v1 == vseed)
-           pve1=vseed->e1->v2;
-       else
-           pve1=vseed->e1->v1;
-       pve2 = vseed->otherAdjVert(pve1);
-
-       vs=vseed;
-       if(pve1->y<pve2->y)
-           ve=pve1;
-       else if(pve1->y>pve2->y)
-           ve=pve2;
-       else
-           cout<<"that thing that you said would never happen happened"<<endl;
-
-    vert2d* A = vseed;
-    vert2d* B = ve;
-    vert2d* C = B->otherAdjVert(A);
-    vert2d* D = C->otherAdjVert(B);
-    vert2d* nextA = D->otherAdjVert(C);
-
-
-    bool passDoneFlag=false;
-    while(!passDoneFlag)
+    for(int i=0;i<iterations;i++)
     {
-    //we have our four points A-->B-->C-->D
-        if(ccw(A,B,C)==1)
-        {//angle1 convex
-            if(ccw(B,C,D)==1)
-            {//both angles convex /'''\
-            //ultimately remove B and C, first project AB and CD to intersection
-                int isecx, isecy;
-                if(B->x==A->x)
-                {
-                 int mCD = (D->y - C->y)/(D->x - C->x);
-                 int bCD = C->y - mCD*C->x;
-                 isecx = B->x;
-                 isecy = mCD*B->x+bCD;
-                }
-                else if(D->x==C->x)
-                {
-                 int mAB = (B->y - A->y)/(B->x - A->x);
-                 int bAB = A->y - mAB*A->x;
-                 isecx = D->x;
-                 isecy = mAB*D->x+bAB;
-                }
-                else
-                {
-                int mAB = (B->y - A->y)/(B->x - A->x);
-                int mCD = (D->y - C->y)/(D->x - C->x);
-                int bAB = A->y - mAB*A->x;
-                int bCD = C->y - mCD*C->x;
-                if(mAB-mCD==0)
-                {//not sure when this stupid case happens
-                    isecx =-100;
-                    isecy =-100;
-                }
-                else
-                {
-                isecx = (bCD - bAB)/(mAB - mCD);
-                isecy = mAB * isecx + bAB;
-                }
-                }
+        // cout<<"beginning. edgecount: "<<eLi->size()<<endl;
 
-                if(isecx>1 && isecx<img.width()-1 && isecy>1 && isecy<img.width()-1)
-                {
-                vert2d* VN = new vert2d(isecx,isecy);
-                vertsMade->insert(qMakePair(isecx,isecy),VN);
-                vLi->append(VN);
+        if(vseed->e1->v1 == vseed)
+            pve1=vseed->e1->v2;
+        else
+            pve1=vseed->e1->v1;
+        pve2 = vseed->otherAdjVert(pve1);
 
-                edge2d* eAVN = new edge2d(A,VN);
-                edgesMade->insert(qMakePair(A,VN),eAVN);
-                edgesMade->insert(qMakePair(VN,A),eAVN);
-                eLi->append(eAVN);// cout<<"317- "; printEdge(eAVN);
-                edge2d* eVND = new edge2d(VN,D);
-                edgesMade->insert(qMakePair(D,VN),eVND);
-                edgesMade->insert(qMakePair(VN,D),eVND);
-                eLi->append(eVND); //cout<<"321- "; printEdge(eVND);
+        vs=vseed;
+        if(pve1->y<pve2->y)
+            ve=pve1;
+        else if(pve1->y>pve2->y)
+            ve=pve2;
+        else
+            cout<<"that thing that you said would never happen happened"<<endl;
 
-                VN->addEdge(eAVN);
-                VN->addEdge(eVND);
-
-                edge2d* AB = edgesMade->value(qMakePair(A,B));
-                edge2d* CD = edgesMade->value(qMakePair(C,D));
-                A->replaceEdge(AB,eAVN);
-                D->replaceEdge(CD,eVND);
-
-                edgesMade->remove(qMakePair(A,B));
-                edgesMade->remove(qMakePair(B,A));
-                edgesMade->remove(qMakePair(C,D));
-                edgesMade->remove(qMakePair(D,C));
-                eLi->removeAll(AB);
-                eLi->removeAll(CD);
-                vLi->removeAll(B);
-                vLi->removeAll(C);
-                vertsMade->remove(qMakePair(B->x,B->y));
-                vertsMade->remove(qMakePair(C->x,C->y));
-                delete AB;
-                delete CD;
-                delete B;
-                delete C;
-                }
+        vert2d* A = vseed;
+        vert2d* B = ve;
+        vert2d* C = B->otherAdjVert(A);
+        vert2d* D = C->otherAdjVert(B);
+        vert2d* nextA = D->otherAdjVert(C);
 
 
-
-            }
-            else
-            {// convex-concave  /\/
-             //remove C
-             edge2d* e = new edge2d(B,D);
-             edgesMade->insert(qMakePair(B,D),e);
-             edgesMade->insert(qMakePair(D,B),e);
-             eLi->append(e); //cout<<"356- "; printEdge(e);
-             edge2d* oldBe = edgesMade->value(qMakePair(B,C));
-             edge2d* oldDe = edgesMade->value(qMakePair(C,D));
-             B->replaceEdge(oldBe,e);
-             D->replaceEdge(oldDe,e);
-             edgesMade->remove(qMakePair(B,C));
-             edgesMade->remove(qMakePair(C,B));
-             edgesMade->remove(qMakePair(C,D));
-             edgesMade->remove(qMakePair(D,C));
-             eLi->removeAll(oldBe);
-             eLi->removeAll(oldDe);
-             delete oldBe;
-             delete oldDe;
-             vLi->removeAll(C);
-             vertsMade->remove(qMakePair(C->x,C->y));
-             delete C;
-            }
-
-        }
-        else if(ccw(A,B,C)==-1)
+        bool passDoneFlag=false;
+        while(!passDoneFlag)
         {
-            if(ccw(B,C,D)==0)
+            //we have our four points A-->B-->C-->D
+            if(ccw(A,B,C)==1)
+            {//angle1 convex
+                if(ccw(B,C,D)==1)
+                {//both angles convex /'''\
+                    //ultimately remove B and C, first project AB and CD to intersection
+                    int isecx, isecy;
+                    if(B->x==A->x)
+                    {
+                        int mCD = (D->y - C->y)/(D->x - C->x);
+                        int bCD = C->y - mCD*C->x;
+                        isecx = B->x;
+                        isecy = mCD*B->x+bCD;
+                    }
+                    else if(D->x==C->x)
+                    {
+                        int mAB = (B->y - A->y)/(B->x - A->x);
+                        int bAB = A->y - mAB*A->x;
+                        isecx = D->x;
+                        isecy = mAB*D->x+bAB;
+                    }
+                    else
+                    {
+                        int mAB = (B->y - A->y)/(B->x - A->x);
+                        int mCD = (D->y - C->y)/(D->x - C->x);
+                        int bAB = A->y - mAB*A->x;
+                        int bCD = C->y - mCD*C->x;
+                        if(mAB-mCD==0)
+                        {//not sure when this stupid case happens
+                            isecx =-100;
+                            isecy =-100;
+                        }
+                        else
+                        {
+                            isecx = (bCD - bAB)/(mAB - mCD);
+                            isecy = mAB * isecx + bAB;
+                        }
+                    }
+
+                    if(isecx>1 && isecx<img.width()-1 && isecy>1 && isecy<img.width()-1)
+                    {
+                        vert2d* VN = new vert2d(isecx,isecy);
+                        vertsMade->insert(qMakePair(isecx,isecy),VN);
+                        vLi->append(VN);
+
+                        edge2d* eAVN = new edge2d(A,VN);
+                        edgesMade->insert(qMakePair(A,VN),eAVN);
+                        edgesMade->insert(qMakePair(VN,A),eAVN);
+                        eLi->append(eAVN);// cout<<"317- "; printEdge(eAVN);
+                        edge2d* eVND = new edge2d(VN,D);
+                        edgesMade->insert(qMakePair(D,VN),eVND);
+                        edgesMade->insert(qMakePair(VN,D),eVND);
+                        eLi->append(eVND); //cout<<"321- "; printEdge(eVND);
+
+                        VN->addEdge(eAVN);
+                        VN->addEdge(eVND);
+
+                        edge2d* AB = edgesMade->value(qMakePair(A,B));
+                        edge2d* CD = edgesMade->value(qMakePair(C,D));
+                        A->replaceEdge(AB,eAVN);
+                        D->replaceEdge(CD,eVND);
+
+                        edgesMade->remove(qMakePair(A,B));
+                        edgesMade->remove(qMakePair(B,A));
+                        edgesMade->remove(qMakePair(C,D));
+                        edgesMade->remove(qMakePair(D,C));
+                        eLi->removeAll(AB);
+                        eLi->removeAll(CD);
+                        vLi->removeAll(B);
+                        vLi->removeAll(C);
+                        vertsMade->remove(qMakePair(B->x,B->y));
+                        vertsMade->remove(qMakePair(C->x,C->y));
+                        delete AB;
+                        delete CD;
+                        delete B;
+                        delete C;
+                    }
+
+
+
+                }
+                else
+                {// convex-concave  /\/
+                    //remove C
+                    edge2d* e = new edge2d(B,D);
+                    edgesMade->insert(qMakePair(B,D),e);
+                    edgesMade->insert(qMakePair(D,B),e);
+                    eLi->append(e); //cout<<"356- "; printEdge(e);
+                    edge2d* oldBe = edgesMade->value(qMakePair(B,C));
+                    edge2d* oldDe = edgesMade->value(qMakePair(C,D));
+                    B->replaceEdge(oldBe,e);
+                    D->replaceEdge(oldDe,e);
+                    edgesMade->remove(qMakePair(B,C));
+                    edgesMade->remove(qMakePair(C,B));
+                    edgesMade->remove(qMakePair(C,D));
+                    edgesMade->remove(qMakePair(D,C));
+                    eLi->removeAll(oldBe);
+                    eLi->removeAll(oldDe);
+                    delete oldBe;
+                    delete oldDe;
+                    vLi->removeAll(C);
+                    vertsMade->remove(qMakePair(C->x,C->y));
+                    delete C;
+                }
+
+            }
+            else if(ccw(A,B,C)==-1)
             {
-                edge2d* e = new edge2d(B,D);
-                edgesMade->insert(qMakePair(B,D),e);
-                edgesMade->insert(qMakePair(D,B),e);
-                eLi->append(e); //cout<<"382- "; printEdge(e);
-                edge2d* oldBe = edgesMade->value(qMakePair(B,C));
-                edge2d* oldDe = edgesMade->value(qMakePair(C,D));
-                B->replaceEdge(oldBe,e);
-                D->replaceEdge(oldDe,e);
-                edgesMade->remove(qMakePair(B,C));
-                edgesMade->remove(qMakePair(C,B));
-                edgesMade->remove(qMakePair(C,D));
-                edgesMade->remove(qMakePair(D,C));
-                eLi->removeAll(oldBe);
-                eLi->removeAll(oldDe);
-                delete oldBe;
-                delete oldDe;
-                vLi->removeAll(C);
-                vertsMade->remove(qMakePair(C->x,C->y));
-                delete C;
+                if(ccw(B,C,D)==0)
+                {
+                    edge2d* e = new edge2d(B,D);
+                    edgesMade->insert(qMakePair(B,D),e);
+                    edgesMade->insert(qMakePair(D,B),e);
+                    eLi->append(e); //cout<<"382- "; printEdge(e);
+                    edge2d* oldBe = edgesMade->value(qMakePair(B,C));
+                    edge2d* oldDe = edgesMade->value(qMakePair(C,D));
+                    B->replaceEdge(oldBe,e);
+                    D->replaceEdge(oldDe,e);
+                    edgesMade->remove(qMakePair(B,C));
+                    edgesMade->remove(qMakePair(C,B));
+                    edgesMade->remove(qMakePair(C,D));
+                    edgesMade->remove(qMakePair(D,C));
+                    eLi->removeAll(oldBe);
+                    eLi->removeAll(oldDe);
+                    delete oldBe;
+                    delete oldDe;
+                    vLi->removeAll(C);
+                    vertsMade->remove(qMakePair(C->x,C->y));
+                    delete C;
+                }
+                else
+                {
+                    //concave-convex \/\  OR
+                    //both angles concave \__/
+                    //either way: remove B
+                    edge2d* e = new edge2d(A,C);
+                    edgesMade->insert(qMakePair(A,C),e);
+                    edgesMade->insert(qMakePair(C,A),e);
+                    eLi->append(e);// cout<<"407- "; printEdge(e);
+                    edge2d* oldAe = edgesMade->value(qMakePair(A,B));
+                    edge2d* oldCe = edgesMade->value(qMakePair(B,C));
+                    A->replaceEdge(oldAe,e);
+                    C->replaceEdge(oldCe,e);
+                    edgesMade->remove(qMakePair(A,B));
+                    edgesMade->remove(qMakePair(B,A));
+                    edgesMade->remove(qMakePair(B,C));
+                    edgesMade->remove(qMakePair(C,B));
+                    eLi->removeAll(oldAe);
+                    eLi->removeAll(oldCe);
+                    delete oldAe;
+                    delete oldCe;
+                    vLi->removeAll(B);
+                    vertsMade->remove(qMakePair(B->x,B->y));
+                    delete B;
+                }
             }
             else
-            {
-             //concave-convex \/\  OR
-             //both angles concave \__/
-             //either way: remove B
+            {//a,b,c straight.  remove b
                 edge2d* e = new edge2d(A,C);
                 edgesMade->insert(qMakePair(A,C),e);
                 edgesMade->insert(qMakePair(C,A),e);
-                eLi->append(e);// cout<<"407- "; printEdge(e);
+                eLi->append(e); //cout<<"430- "; printEdge(e);
                 edge2d* oldAe = edgesMade->value(qMakePair(A,B));
                 edge2d* oldCe = edgesMade->value(qMakePair(B,C));
                 A->replaceEdge(oldAe,e);
@@ -460,76 +490,53 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
                 vertsMade->remove(qMakePair(B->x,B->y));
                 delete B;
             }
-        }
-        else
-        {//a,b,c straight.  remove b
-            edge2d* e = new edge2d(A,C);
-            edgesMade->insert(qMakePair(A,C),e);
-            edgesMade->insert(qMakePair(C,A),e);
-            eLi->append(e); //cout<<"430- "; printEdge(e);
-            edge2d* oldAe = edgesMade->value(qMakePair(A,B));
-            edge2d* oldCe = edgesMade->value(qMakePair(B,C));
-            A->replaceEdge(oldAe,e);
-            C->replaceEdge(oldCe,e);
-            edgesMade->remove(qMakePair(A,B));
-            edgesMade->remove(qMakePair(B,A));
-            edgesMade->remove(qMakePair(B,C));
-            edgesMade->remove(qMakePair(C,B));
-            eLi->removeAll(oldAe);
-            eLi->removeAll(oldCe);
-            delete oldAe;
-            delete oldCe;
-            vLi->removeAll(B);
-            vertsMade->remove(qMakePair(B->x,B->y));
-            delete B;
-        }
-    //advance!
-        //cout<<"advancing"<<endl;
-        A = nextA;
-        B = nextA->otherAdjVert(D);
-        C = B->otherAdjVert(A);
-        D = C->otherAdjVert(B);
-        nextA = D->otherAdjVert(C);
-        //cout<<"done advancing"<<endl;
-        if(A==vseed || B==vseed || C==vseed || D==vseed)
-        {
-            passDoneFlag=true;
+            //advance!
+            //cout<<"advancing"<<endl;
+            A = nextA;
+            B = nextA->otherAdjVert(D);
+            C = B->otherAdjVert(A);
+            D = C->otherAdjVert(B);
+            nextA = D->otherAdjVert(C);
+            //cout<<"done advancing"<<endl;
+            if(A==vseed || B==vseed || C==vseed || D==vseed)
+            {
+                passDoneFlag=true;
+            }
         }
     }
-}
 
 
-   delete eLi;
-   eLi = new QList<edge2d*>();
+    delete eLi;
+    eLi = new QList<edge2d*>();
 
-   QSet<edge2d*>* visitedE = new QSet<edge2d*>();
-   for(int i=0; i<vLi->size(); i++)
-   {
-       vert2d* vv = vLi->at(i);
-       if(!visitedE->contains(vv->e1))
-       {
-           eLi->append(vv->e1);
-           visitedE->insert(vv->e1);
-       }
-       if(!visitedE->contains(vv->e2))
-       {
-           eLi->append(vv->e2);
-           visitedE->insert(vv->e2);
-       }
-   }
-
-
+    QSet<edge2d*>* visitedE = new QSet<edge2d*>();
+    for(int i=0; i<vLi->size(); i++)
+    {
+        vert2d* vv = vLi->at(i);
+        if(!visitedE->contains(vv->e1))
+        {
+            eLi->append(vv->e1);
+            visitedE->insert(vv->e1);
+        }
+        if(!visitedE->contains(vv->e2))
+        {
+            eLi->append(vv->e2);
+            visitedE->insert(vv->e2);
+        }
+    }
 
 
-   polyHull* pHull = new polyHull(vLi,eLi);
-
-   //pHull->print();
-
-   pHull->imgh = h;
-   pHull->imgw = w;
 
 
-   return pHull;
+    polyHull* pHull = new polyHull(vLi,eLi);
+
+    //pHull->print();
+
+    pHull->imgh = h;
+    pHull->imgw = w;
+
+
+    return pHull;
 }
 
 //OKAY LETS GET REAL HERE
@@ -537,47 +544,47 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
 QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* polyhull)
 {
 
-//*************REFERENCE PSEUDOCODE*************************************
-//PREPROCESSING:
+    //*************REFERENCE PSEUDOCODE*************************************
+    //PREPROCESSING:
     //Convert entire model into our format.  I know this is goofy but its only done once and makes it easier.
 
     //For each triangle:
-        //make a PatchTri
-            //populate vertices - make sure not a repeat by hashing
-                //add this triangle to the vert ;)
-            //populate edges - make sure not a repeat by hashing
-                //add this triangle to the edge ;)
+    //make a PatchTri
+    //populate vertices - make sure not a repeat by hashing
+    //add this triangle to the vert ;)
+    //populate edges - make sure not a repeat by hashing
+    //add this triangle to the edge ;)
 
 
-//choose seed triangle, get center point
+    //choose seed triangle, get center point
     //for now, tangent equals vo--->v1  (should be curvature!)
-//assign UVS to PatchTri s.t. centered at .5,.5 and tangent is aligned with texture //HOW???? NEED BITANGENT OR NO?  HOW TO DETERMINE SCALE?
+    //assign UVS to PatchTri s.t. centered at .5,.5 and tangent is aligned with texture //HOW???? NEED BITANGENT OR NO?  HOW TO DETERMINE SCALE?
     //enqueue edges of triangle
 
-//make our patchlist to return!
+    //make our patchlist to return!
 
-//WHILE MESH IS NOT COVERED:
+    //WHILE MESH IS NOT COVERED:
 
-//make visitedSets of edges, verts, tris
-//mark everything from seed as visited
+    //make visitedSets of edges, verts, tris
+    //mark everything from seed as visited
 
-//while Q not empty
+    //while Q not empty
     //dequeue edge e
-        //find other triangle in edge
-        //if tri is not in patch
-            //if e isects hull  //see struct polyHull::isectUV
-                //if homeomorphic to a disc (new vert not in patch OR only 1 edge not in patch)
-                  //if new vert already in patch
-                      //just add triangle to patch!
-                          //enqueue new edges of triangle
-                          //and mark them as visited, as well as new tri itself
-                  //else need to add vert:
-                      //estimate parametrization of new vert like so:
-                          //for each triangle containing vert and an already-mapped edge
-                              //stick a similar triangle onto that edge, and see where the corresponding location of vert is
-                          //take average of those guys as UV for new vert
-                      //then add triangle like above: enq new edges, mark any new edges, vert, tri as visited
-   //patch is done, delete visitedSets, continue to next patch
+    //find other triangle in edge
+    //if tri is not in patch
+    //if e isects hull  //see struct polyHull::isectUV
+    //if homeomorphic to a disc (new vert not in patch OR only 1 edge not in patch)
+    //if new vert already in patch
+    //just add triangle to patch!
+    //enqueue new edges of triangle
+    //and mark them as visited, as well as new tri itself
+    //else need to add vert:
+    //estimate parametrization of new vert like so:
+    //for each triangle containing vert and an already-mapped edge
+    //stick a similar triangle onto that edge, and see where the corresponding location of vert is
+    //take average of those guys as UV for new vert
+    //then add triangle like above: enq new edges, mark any new edges, vert, tri as visited
+    //patch is done, delete visitedSets, continue to next patch
 
     //mesh is covered (or we stopped making patches for whatever reason
 
@@ -608,7 +615,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
             PatchVert* v;
             if(vertsMade->contains(pt->GLMtri->vindices[vi]))
             {
-                 v = vertsMade->value(pt->GLMtri->vindices[vi]);
+                v = vertsMade->value(pt->GLMtri->vindices[vi]);
                 v->tris->append(pt);
             }
             else
@@ -620,6 +627,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                 v->pos.y = glmverts[v->GLMidx+1];
                 v->pos.z = glmverts[v->GLMidx+2];
                 v->tris->append(pt);
+                vertsMade->insert(v->GLMidx,v);
             }
             switch(vi)
             {
@@ -688,84 +696,87 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
     //WHILE MESH IS NOT COVERED******
     for(int wtf=0; wtf<1; wtf++)//***
     {                           //***
-    //WHILE MESH IS NOT COVERED******
+        //WHILE MESH IS NOT COVERED******
 
 
-    //choose seed triangle, get center point
+        //choose seed triangle, get center point
         //for now, tangent equals vo--->v1  (should be curvature!)
-    //assign UVS to PatchTri s.t. centered at .5,.5 and tangent is aligned with texture //HOW???? NEED BITANGENT OR NO?  HOW TO DETERMINE SCALE?
+        //assign UVS to PatchTri s.t. centered at .5,.5 and tangent is aligned with texture //HOW???? NEED BITANGENT OR NO?  HOW TO DETERMINE SCALE?
         //enqueue edges of triangle
 
-   //DONT DELETE THESE THINGS!
-    //hash table of uvs for this specific patch!
-    QHash<PatchVert*,vec2<float> >* UVs = new QHash<PatchVert*, vec2<float> >();
-    //list of Tris for this specific patch!
-    QList<PatchTri*>* PTris = (new QList<PatchTri*>());
-    //seed for this specific patch!
-    PatchTri* seed = trisMade[rand()%model->numtriangles];
+        //DONT DELETE THESE THINGS!
+        //hash table of uvs for this specific patch!
+        QHash<PatchVert*,vec2<float> >* UVs = new QHash<PatchVert*, vec2<float> >();
+        //list of Tris for this specific patch!
+        QList<PatchTri*>* PTris = (new QList<PatchTri*>());
+        //seed for this specific patch!
+        PatchTri* seed = trisMade[rand()%model->numtriangles];
 
-    vec2<float> seedUV0, seedUV1, seedUV2;
-    assignSeedUV(seed, seedUV0, seedUV1, seedUV2);
-    UVs->insert(seed->v0,seedUV0);
-    UVs->insert(seed->v1,seedUV1);
-    UVs->insert(seed->v2,seedUV2);
+        vec2<float> seedUV0, seedUV1, seedUV2;
+        assignSeedUV(seed, seedUV0, seedUV1, seedUV2);
+        UVs->insert(seed->v0,seedUV0);
+        UVs->insert(seed->v1,seedUV1);
+        UVs->insert(seed->v2,seedUV2);
 
-    QQueue<PatchEdge*> edgeQ = *(new QQueue<PatchEdge*>());
-    edgeQ.enqueue(seed->e01);
-    edgeQ.enqueue(seed->e12);
-    edgeQ.enqueue(seed->e20);
+        QQueue<PatchEdge*> edgeQ = *(new QQueue<PatchEdge*>());
+        edgeQ.enqueue(seed->e01);
+        edgeQ.enqueue(seed->e12);
+        edgeQ.enqueue(seed->e20);
 
-    //make visitedSets of edges, verts, tris
-    //mark everything from seed as visited
-    QSet<PatchVert*> vertsInPatch = *(new QSet<PatchVert*>());
-    QSet<PatchEdge*> edgesInPatch = *(new QSet<PatchEdge*>());
-    QSet<PatchTri*> trisInPatch = *(new QSet<PatchTri*>());
-    vertsInPatch.insert(seed->v0);
-    vertsInPatch.insert(seed->v1);
-    vertsInPatch.insert(seed->v2);
-    edgesInPatch.insert(seed->e01);
-    edgesInPatch.insert(seed->e12);
-    edgesInPatch.insert(seed->e20);
-    trisInPatch.insert(seed);
-    PTris->append(seed);
-    cout<<"PTris size init: "<<PTris->size()<<endl;
+        //make visitedSets of edges, verts, tris
+        //mark everything from seed as visited
+        QSet<PatchVert*> vertsInPatch = *(new QSet<PatchVert*>());
+        QSet<PatchEdge*> edgesInPatch = *(new QSet<PatchEdge*>());
+        QSet<PatchTri*> trisInPatch = *(new QSet<PatchTri*>());
+        vertsInPatch.insert(seed->v0);
+        vertsInPatch.insert(seed->v1);
+        vertsInPatch.insert(seed->v2);
+        edgesInPatch.insert(seed->e01);
+        edgesInPatch.insert(seed->e12);
+        edgesInPatch.insert(seed->e20);
+        trisInPatch.insert(seed);
+        PTris->append(seed);
 
-    //while Q not empty
+        //while Q not empty
         //dequeue edge e
-            //find other triangle in edge
-            //if tri is not in patch
-                //if e isects hull  //see struct polyHull::isectUV
-                    //if homeomorphic to a disc (new vert not in patch OR only 1 edge not in patch)
-                      //if new vert already in patch
-                          //just add triangle to patch!
-                              //enqueue new edges of triangle
-                              //and mark them as visited, as well as new tri itself
-                      //else need to add vert:
-                          //estimate parametrization of new vert like so:
-                              //for each triangle containing vert and an already-mapped edge
-                                  //stick a similar triangle onto that edge, and see where the corresponding location of vert is
-                              //take average of those guys as UV for new vert
-                          //then add triangle like above: enq new edges, mark any new edges, vert, tri as visited
-       //patch is done, delete visitedSets, continue to next patch
+        //find other triangle in edge
+        //if tri is not in patch
+        //if e isects hull  //see struct polyHull::isectUV
+        //if homeomorphic to a disc (new vert not in patch OR only 1 edge not in patch)
+        //if new vert already in patch
+        //just add triangle to patch!
+        //enqueue new edges of triangle
+        //and mark them as visited, as well as new tri itself
+        //else need to add vert:
+        //estimate parametrization of new vert like so:
+        //for each triangle containing vert and an already-mapped edge
+        //stick a similar triangle onto that edge, and see where the corresponding location of vert is
+        //take average of those guys as UV for new vert
+        //then add triangle like above: enq new edges, mark any new edges, vert, tri as visited
+        //patch is done, delete visitedSets, continue to next patch
 
-    while(!edgeQ.isEmpty())
-    {
-        PatchEdge* e = edgeQ.dequeue();
+        int III = 0;
+        while(!edgeQ.isEmpty()&&III<2)
+        {
+            III++;
+            PatchEdge* e = edgeQ.dequeue();
             PatchTri* otherTri;
             if(trisInPatch.contains(e->t1))
             {
+                cout << e->ntris << endl;
                 if(e->ntris==2 && !trisInPatch.contains(e->t2))
                 {
                     otherTri = e->t2;
                 }
                 else
                 {
-                 cout<<"both tris already in patch or edge only has one tri"<<endl;
+                    cout<<"both tris already in patch or edge only has one tri"<<endl;
+                    continue;
                 }
             }
             else if(e->ntris>=1)
             {
-               otherTri = e->t1;
+                otherTri = e->t1;
             }
             else
             {
@@ -804,9 +815,9 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                     else
                     {//gotta add the new vertex
                         //estimate parametrization of new vert like so:
-                            //for each triangle containing vert and an already-mapped edge
-                                //stick a similar triangle onto that edge, and see where the corresponding location of vert is
-                            //take average of those guys as UV for new vert
+                        //for each triangle containing vert and an already-mapped edge
+                        //stick a similar triangle onto that edge, and see where the corresponding location of vert is
+                        //take average of those guys as UV for new vert
                         //then add triangle like above: enq new edges, mark any new edges, vert, tri as visited
 
                         vec2<float> sumUVs;
@@ -840,7 +851,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                             else
                                 continue;
                             numUVs++;
-                            sumUVs = sumUVs + estimateUV(_A,_B,newvert, UVs->value(_A), UVs->value(_B));
+                            sumUVs = sumUVs + estimateUV(_B,_A,newvert, UVs->value(_B), UVs->value(_A));
                         }
                         //sumUVs is actually now the UVs we want
                         sumUVs = sumUVs / (1.0+numUVs);
@@ -849,37 +860,37 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                         vertsInPatch.insert(newvert);
                         trisInPatch.insert(otherTri);
                         if(!edgesInPatch.contains(otherTri->e01))
-                            {edgesInPatch.insert(otherTri->e01);
-                             edgeQ.enqueue(otherTri->e01);}
+                        {edgesInPatch.insert(otherTri->e01);
+                            edgeQ.enqueue(otherTri->e01);}
                         if(!edgesInPatch.contains(otherTri->e12))
-                            {edgesInPatch.insert(otherTri->e12);
-                             edgeQ.enqueue(otherTri->e12);}
+                        {edgesInPatch.insert(otherTri->e12);
+                            edgeQ.enqueue(otherTri->e12);}
                         if(!edgesInPatch.contains(otherTri->e20))
                         {edgesInPatch.insert(otherTri->e20);
-                         edgeQ.enqueue(otherTri->e20);}
+                            edgeQ.enqueue(otherTri->e20);}
                         PTris->append(otherTri);
                     }
                 }
             }//endif isectHull
-    }//endwhile Q!Empty
+        }//endwhile Q!Empty
 
-    //PTris, UVs, seed should be sufficient to define patch!
-    LappedPatch* newPatch = new LappedPatch();
-    newPatch->tris = PTris;
-    cout<<"PTris size end: "<<PTris->size()<<endl;
-    newPatch->seed = seed;
-    newPatch->uvs = UVs;
-    PatchList->append(newPatch);
+        //PTris, UVs, seed should be sufficient to define patch!
+        LappedPatch* newPatch = new LappedPatch();
+        newPatch->tris = PTris;
+        //cout<<"PTris size end: "<<PTris->size()<<endl;
+        newPatch->seed = seed;
+        newPatch->uvs = UVs;
+        PatchList->append(newPatch);
 
 
-    //delete temporary stupid stuff
-    /*delete &edgeQ;
+        //delete temporary stupid stuff
+        /*delete &edgeQ;
     delete &edgesInPatch;
     delete &vertsInPatch;
     delete &trisInPatch;*/
 
 
-    //ENDWHILE MESH NOT COVERED*
+        //ENDWHILE MESH NOT COVERED*
     }                       //**
     //ENDWHILE MESH NOT COvERED*
 

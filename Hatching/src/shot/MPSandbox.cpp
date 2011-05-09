@@ -91,13 +91,13 @@ void MPSandbox::begin()
     patr.drawLine(img.width()*s0, (1.0-t0)*img.height(), img.width()*s1, (1.0-t1)*img.height());
     }*/
 
-    /*
+
     QList<LappedPatch*>* LP = lu->generatePatches(mod,pHull);
     cout<<"got patches.  patches: "<<LP->size()<<endl;
     cout<<"patch 1 tris: "<<LP->at(0)->tris->size()<<endl;
     lu->vizualizePatch(LP->at(0),&img);
-    img.save("/home/mprice/Desktop/Patch/Collision.png","PNG");
-    */
+    img.save("Collision.png","PNG");
+
 
 
 
