@@ -50,7 +50,8 @@ LappedOrient::LappedOrient()
 
 LappedOrient::~LappedOrient() {}
 
-void LappedOrient::orientTexture(LappedPatch patch) {
+void LappedOrient::orientTexture(LappedPatch *_patch) {
+    LappedPatch patch = *_patch;
     //insert each vertex number into a list of vertices.
     QVector<PatchVert*> verts;
     for (int i = 0; i < patch.tris->size(); i++) {

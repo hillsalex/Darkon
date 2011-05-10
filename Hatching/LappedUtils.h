@@ -86,6 +86,72 @@ bool lineIntersect(double x1, double y1, double x2, double y2, double xa, double
     return true;
 }*/
 
+
+
+struct PatchTri;
+struct PatchVert
+{
+    //the texture coordinates (we assign these)
+    float s,t;//really should be outside since vary perpatch
+
+
+    //the index of the x coordinate in the GLM vertex array
+    int GLMidx;
+    //the coordinate values
+    //float x,y,z;
+    Vector4 pos;
+    //the triangles that contain this vertex
+    QList<PatchTri*>* tris;
+    PatchVert(){}
+};
+
+struct PatchEdge;
+struct PatchTri
+{
+    //the patchverts we made
+    PatchVert* v0;
+    PatchVert* v1;
+    PatchVert* v2;
+    //edges
+    PatchEdge* e01;
+    PatchEdge* e12;
+    PatchEdge* e20;
+
+    //the GLM triangle (maybe some redundant information but w/e)
+    _GLMtriangle* GLMtri;
+    Vector4 tangent;
+
+    PatchVert* otherVert(PatchVert* _A, PatchVert* _B)
+    {
+        if(v0!= _A && v0!= _B)
+            return v0;
+        if(v1!= _A && v1!= _B)
+            return v1;
+        if(v2!= _A && v2!= _B)
+            return v2;
+        return NULL;
+    }
+};
+
+struct PatchEdge
+{
+    PatchVert* v0;
+    PatchVert* v1;
+    int ntris;
+    PatchTri* t1;
+    PatchTri* t2;
+    PatchEdge(PatchVert* _v0, PatchVert* _v1):v0(_v0),v1(_v1){ntris=0;}
+    void addTri(PatchTri* t){if(ntris==0){ntris++;t1=t;}else if(ntris==1){ntris++;t2=t;}else{cout<<"TRIED TO ADD MORE THAN TWO TRIANGLES TO AN EDGE"<<endl;}}
+    PatchTri* otherTri(PatchTri* _t){if (_t == t1)return t2; else if(_t==t2)return t1;else cout<<"TRIED TO GET OTHER TRIANGLE WITH BAD INPUT"<<endl;}
+};
+
+struct LappedPatch
+{
+    PatchTri* seed;
+    QList<PatchTri*>* tris;
+    QHash<PatchVert*, vec2<float> >* uvs;
+};
+
 struct polyHull
 {
     QList<vert2d*>* verts;
@@ -200,6 +266,14 @@ struct polyHull
         if(c)cout<<"v1 inside"<<endl;*/
         return a||b||c;
     }
+    bool fullyInside(PatchTri* pt, QHash<PatchVert*, vec2<float> >* uvs)
+    {
+        vec2<float> p1,p2,p3;
+        p1 = uvs->value(pt->v0);
+        p2 = uvs->value(pt->v1);
+        p3 = uvs->value(pt->v2);
+        return (isInteriorPt(p1.x, p1.y) && isInteriorPt(p2.x, p2.y)) || (isInteriorPt(p1.x, p1.y) && isInteriorPt(p3.x, p3.y)) || (isInteriorPt(p2.x, p2.y) && isInteriorPt(p3.x, p3.y));
+    }
 
     void print()
     {   cout<<"PRINTING HULL"<<endl;
@@ -213,70 +287,6 @@ struct polyHull
         for(int i=0; i<edges->size(); i++)
             cout<<"("<< edges->at(i)->v1->x <<","<< edges->at(i)->v1->y <<") --- (" <<  edges->at(i)->v2->x <<","<<  edges->at(i)->v2->y << ")"<<endl;
     }
-};
-
-struct PatchTri;
-struct PatchVert
-{
-    //the texture coordinates (we assign these)
-    float s,t;//really should be outside since vary perpatch
-
-
-    //the index of the x coordinate in the GLM vertex array
-    int GLMidx;
-    //the coordinate values
-    //float x,y,z;
-    Vector4 pos;
-    //the triangles that contain this vertex
-    QList<PatchTri*>* tris;
-    PatchVert(){}
-};
-
-struct PatchEdge;
-struct PatchTri
-{
-    //the patchverts we made
-    PatchVert* v0;
-    PatchVert* v1;
-    PatchVert* v2;
-    //edges
-    PatchEdge* e01;
-    PatchEdge* e12;
-    PatchEdge* e20;
-
-    //the GLM triangle (maybe some redundant information but w/e)
-    _GLMtriangle* GLMtri;
-    Vector4 tangent;
-
-    PatchVert* otherVert(PatchVert* _A, PatchVert* _B)
-    {
-        if(v0!= _A && v0!= _B)
-            return v0;
-        if(v1!= _A && v1!= _B)
-            return v1;
-        if(v2!= _A && v2!= _B)
-            return v2;
-        return NULL;
-    }
-};
-
-struct PatchEdge
-{
-    PatchVert* v0;
-    PatchVert* v1;
-    int ntris;
-    PatchTri* t1;
-    PatchTri* t2;
-    PatchEdge(PatchVert* _v0, PatchVert* _v1):v0(_v0),v1(_v1){ntris=0;}
-    void addTri(PatchTri* t){if(ntris==0){ntris++;t1=t;}else if(ntris==1){ntris++;t2=t;}else{cout<<"TRIED TO ADD MORE THAN TWO TRIANGLES TO AN EDGE"<<endl;}}
-    PatchTri* otherTri(PatchTri* _t){if (_t == t1)return t2; else if(_t==t2)return t1;else cout<<"TRIED TO GET OTHER TRIANGLE WITH BAD INPUT"<<endl;}
-};
-
-struct LappedPatch
-{
-    PatchTri* seed;
-    QList<PatchTri*>* tris;
-    QHash<PatchVert*, vec2<float> >* uvs;
 };
 
 class LappedUtils

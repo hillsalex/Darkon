@@ -34,10 +34,10 @@ void MPSandbox::begin()
     img.load("/home/mprice/Desktop/Patch/PatchMask.png");
     lu = new LappedUtils();
     MeshOperator* mo = new MeshOperator();
-    mod = models_->value("buddha").model;
+    mod = models_->value("torushd").model;
     mo->calculateCurvatures(mod);
 
-    polyHull* pHull = lu->getPolyHull(&img,3);
+    polyHull* pHull = lu->getPolyHull(&img,10);
 
     //DEBUG DRAW OUTPUT
     /*

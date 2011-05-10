@@ -579,7 +579,7 @@ void DrawEngine::mouse_drag_event(float2 p0,float2 p1) {
 **/
 void DrawEngine::mouse_wheel_event(int dx) {
     if((camera_.center - camera_.eye).getMagnitude() > .5 || dx < 0)
-        camera_.eye += (camera_.center - camera_.eye).getNormalized() * dx * .005;
+        camera_.eye += (camera_.center - camera_.eye).getNormalized() * dx * .00005;
 }
 
 /**
