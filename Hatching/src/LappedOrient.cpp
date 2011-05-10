@@ -238,9 +238,24 @@ void LappedOrient::orientTexture(LappedPatch patch) {
     for (int i = 0; i < verts.size(); i++) {
         unconstrained[i*2]   *= scale;
         unconstrained[i*2+1] *= scale;
-        cout << "vert " << i << " is (" << unconstrained[i*2] << ", " << unconstrained[i*2+1] << ")" << endl;
+//        cout << "vert " << i << " is (" << unconstrained[i*2] << ", " << unconstrained[i*2+1] << ")" << endl;
     }
 
+    for (int i = 0; i < patch.tris->size(); i++) {
+        PatchTri* currtri = patch.tris->at(i);
+        patch.uvs->remove(currtri->v0);
+        patch.uvs->remove(currtri->v1);
+        patch.uvs->remove(currtri->v2);
+        float v0x = unconstrained[verts.indexOf(currtri->v0)*2];
+        float v0y = unconstrained[verts.indexOf(currtri->v0)*2+1];
+        float v1x = unconstrained[verts.indexOf(currtri->v1)*2];
+        float v1y = unconstrained[verts.indexOf(currtri->v1)*2+1];
+        float v2x = unconstrained[verts.indexOf(currtri->v2)*2];
+        float v2y = unconstrained[verts.indexOf(currtri->v2)*2+1];
+        patch.uvs->insert(currtri->v0, vec2<float>(v0x, v0y));
+        patch.uvs->insert(currtri->v1, vec2<float>(v1x, v1y));
+        patch.uvs->insert(currtri->v2, vec2<float>(v2x, v2y));
+    }
 //    QImage *new2D = new QImage(1000, 1000, QImage::Format_ARGB32);
 //    new2D->fill(0xffffffff);
 //    QPainter painter_black(new2D);
