@@ -2,6 +2,7 @@
 #include <QImage>
 #include <sstream>
 #include <iostream>
+#include <QPainter>
 #include "math.h"
 #include "assert.h"
 using std::cout;
@@ -29,6 +30,21 @@ void TAMGenerator::saveTAM(QString path, uchar** TAM, int tones, int sizes, int 
         }
     }cout<<"done."<<endl;
 }
+void TAMGenerator::saveTAM(QString path, QImage** TAM, int tones, int sizes, int maxw)
+{cout<<"Saving TAM in "<<path.toStdString()<<"...";
+    for(int t=0; t<tones; t++)
+    {
+        for(int sz=0;sz<sizes;sz++)
+        {
+            stringstream ss;
+            ss<<path.toStdString()<<"TAM_"<<t<<"_"<<sz;
+            int cursize = maxw >> (sizes-sz-1);
+            QImage* curimg = TAM[tones*sz+t];
+            curimg->save(QString::fromStdString(ss.str()),"PNG");
+            delete curimg;
+        }
+    }cout<<"done."<<endl;
+}
 
 QImage** TAMGenerator::ldImgTAM(QString path, int tones, int sizes)
 {
@@ -44,6 +60,78 @@ QImage** TAMGenerator::ldImgTAM(QString path, int tones, int sizes)
         }
     }
     return toreturn;
+}
+
+void TAMGenerator::drawqStroke(QImage* img,Stroke* stroke)
+{
+    double ang = stroke->angle;
+    int x0 = stroke->x0 * img->width();
+    int y0 = stroke->y0 * img->height();
+
+    double slen = stroke->length;
+    int dX1 = slen*cos(ang * M_PI/180.0) * img->width();
+    int dY1 = slen*sin(ang * M_PI/180.0) * img->height();
+    int x2 = x0+dX1;
+    int y2 = y0+dY1;
+    //first just draw line x0y0 --- (x2,y2) (it'll cut off fine)
+    //then draw line (x2%w, y2%h) ---- (x2%w - dX1 , y2%h - dY1)
+    QPainter* ptr = new QPainter(img);
+
+
+
+    ptr->setPen(QPen(
+            QBrush(QColor(100,100,100)), 3.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin
+            ));
+
+    if(x0==x2 && y0 == y2)
+    {
+        ptr->drawPoint(x0,y0);
+        //ptr->drawEllipse(x0,y0,8,8);
+    }
+    else
+    {
+        ptr->drawLine(x0,y0,x2,y2);
+        ptr->drawLine(x2%img->width(), y2%img->height(), x2%img->width() - dX1, y2%img->height() - dY1);
+        //ptr->end();
+    }
+
+    ptr->setPen(QPen(
+            QBrush(QColor(50,50,50)), 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin
+            ));
+
+    if(x0==x2 && y0 == y2)
+    {
+        ptr->drawPoint(x0,y0);
+        //ptr->drawEllipse(x0,y0,8,8);
+    }
+    else
+    {
+        ptr->drawLine(x0,y0,x2,y2);
+        ptr->drawLine(x2%img->width(), y2%img->height(), x2%img->width() - dX1, y2%img->height() - dY1);
+        //ptr->end();
+    }
+
+    //PASS 2
+    ptr->setPen(QPen(
+            QBrush(Qt::black), 1.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin
+            ));
+
+    if(x0==x2 && y0 == y2)
+    {
+        ptr->drawPoint(x0,y0);
+        //ptr->drawEllipse(x0,y0,8,8);
+    }
+    else
+    {
+        ptr->drawLine(x0,y0,x2,y2);
+        ptr->drawLine(x2%img->width(), y2%img->height(), x2%img->width() - dX1, y2%img->height() - dY1);
+        //ptr->end();
+    }
+    ptr->end();
+
+
+    delete ptr;
+
 }
 
 //stroke: x0,y0,length,
@@ -96,6 +184,115 @@ float TAMGenerator::avgVal(uchar *data, int width)
         }
     }
     return val/(width*width);
+}
+
+float TAMGenerator::qavgVal(QImage* img)
+{
+    return avgVal(img->bits(), img->width());
+}
+
+QImage** TAMGenerator::genImgTAM(int sizes, int tones, int maxwidth)
+{
+    QImage** TAM = new QImage*[tones*sizes];
+    QList<Stroke*>** strokeLists = new QList<Stroke*>*[tones*sizes];
+    //Allocate TAM
+    for(int r=0; r<tones;r++)
+    {
+        int w = maxwidth;
+        for(int c=sizes-1;c>=0;c--)
+        {
+            TAM[c*tones+r] = new QImage(w,w,QImage::Format_ARGB32);
+            strokeLists[c*tones+r] = new QList<Stroke*>();
+            w/=2;
+        }
+    }
+
+    for(int tlev=0; tlev<tones; tlev++)
+    {
+        float curtone = (tlev+1)*(1.0/(tones+1));
+        for(int slev=0; slev<sizes; slev++)
+        {
+            int cursize = maxwidth >> (sizes-slev-1);
+            QImage* curtam = TAM[slev*tones+tlev];
+
+            if(tlev==0)//if first column, set to white initially
+                memset(curtam->bits(),255,sizeof(uchar)*cursize*cursize*4);
+            else//otherwise copy memory from guy on the left
+                memcpy(curtam->bits(), TAM[slev*tones+tlev-1]->bits(),sizeof(uchar)*cursize*cursize*4);
+
+            //draw unique strokes from all guys on top
+            for(int i=0; i<slev; i++)
+            {
+                QList<Stroke*>* strokestoadd = strokeLists[i*tones+tlev];
+                for(int sid=0; sid<strokestoadd->size();sid++)
+                {
+                    drawqStroke(curtam,strokestoadd->at(sid));
+                }
+            }
+
+            //then generate and draw strokes necessary to add tone
+            float av = qavgVal(curtam);
+            QImage** guesses = new QImage*[sizes];
+            int _w = cursize;
+            for(int _s=slev; _s>=0; _s--)
+            {
+                guesses[_s] = new QImage(_w,_w,QImage::Format_ARGB32);
+                _w/=2;
+            }
+
+           // QImage* guess = new QImage(cursize,cursize, QImage::Format_ARGB32);
+            int kkk=0;
+            while(av > 255.0 - 255*curtone*2)
+            {
+                float maxgoodness = 0;
+                Stroke* bestStroke;
+                for(int i=0; i<1; i++)//# trials
+                {kkk++; //cout<<kkk<<endl;
+                    int saz = cursize;
+                    float goodness =0;
+
+                    Stroke* s = new Stroke();
+                    if(tlev<2)
+                        s->angle = rand()%7 -3;
+                    else
+                        s->angle = rand()%7 - 3 + 90;
+                    s->length = (rand()%8+3)/10.0;
+                    s->x0 = (rand()%1000)/1000.0;
+                    s->y0 = (rand()%1000)/1000.0;
+
+                    for(int _sz=slev; _sz>=0; _sz--)
+                    {
+                        memcpy(guesses[_sz]->bits(), TAM[_sz*tones+tlev]->bits(),sizeof(uchar)*saz*saz*4);
+                        saz/=2;
+                        drawqStroke(guesses[_sz],s);
+                        float gav = qavgVal(guesses[_sz]);
+                        goodness += qavgVal(TAM[_sz*tones+tlev]) - gav;
+                    }
+                        goodness /= s->length;
+                        if(goodness>=maxgoodness)
+                        {
+                            bestStroke = s;
+                            maxgoodness = goodness;
+                        }
+                        else
+                        {
+                            delete s;
+                        }
+                }
+                    QList<Stroke*>* curStrLst = strokeLists[slev*tones+tlev];
+                    curStrLst->append(bestStroke);
+                    drawqStroke(curtam,bestStroke);
+                    av = qavgVal(curtam);
+            }
+            cout<<"yay"<<endl;
+            for(int _s=slev; _s>=0; _s--)
+            {
+                delete guesses[_s];
+            }
+            delete[] guesses;
+        }
+    }
+    return TAM;
 }
 
 uchar** TAMGenerator::genTAM(int sizes,int tones,int maxwidth)

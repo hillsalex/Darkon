@@ -37,7 +37,7 @@ void MPSandbox::begin()
     mod = models_->value("torushd").model;
     mo->calculateCurvatures(mod);
 
-    polyHull* pHull = lu->getPolyHull(&img,10);
+    polyHull* pHull = lu->getPolyHull(&img,8);
 
     //DEBUG DRAW OUTPUT
     /*
@@ -127,7 +127,7 @@ img.save("/home/mprice/Desktop/Patch/Collision.png","PNG");*/
     int TAMtones = 6;
     int TAMsizes = 4;
     int TAMmaxw = 256;
-    QImage** imgTAM = tgen.ldImgTAM("../Hatching/src/TAM/",TAMtones,TAMsizes);
+    QImage** imgTAM = tgen.ldImgTAM("/home/mprice/Desktop/TAMS/RejectionXHatch/",TAMtones,TAMsizes);
     glShadeModel(GL_SMOOTH);
     glEnable(GL_LIGHTING);
     glEnable(GL_DEPTH_TEST);
@@ -140,7 +140,7 @@ img.save("/home/mprice/Desktop/Patch/Collision.png","PNG");*/
     glLightfv(GL_LIGHT0,GL_POSITION,lightpos);
 
     glMatrixMode(GL_TEXTURE);
-    //glScalef(4,4,4);
+    //glScalef(.5,.5,.5);
     glTranslatef(0.5, 0.5, 0);
     glRotatef(90.0, 0, 0, 1);
     glTranslatef(-0.5, -0.5, 0);

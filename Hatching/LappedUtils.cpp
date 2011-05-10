@@ -163,7 +163,7 @@ void printVector4(Vector4* v)
 
 void LappedUtils::assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v1st, vec2<float> &v2st)
 {
-    float scale = .1;
+    float scale = .25;
     Vector4 A,B,C;
     A = seed->v0->pos;
     B = seed->v1->pos;
