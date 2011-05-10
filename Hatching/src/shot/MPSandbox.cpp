@@ -34,7 +34,7 @@ void MPSandbox::begin()
     img.load("/home/mprice/Desktop/Patch/PatchMask.png");
     lu = new LappedUtils();
     MeshOperator* mo = new MeshOperator();
-    mod = models_->value("sphere").model;
+    mod = models_->value("torushd").model;
     mo->calculateCurvatures(mod);
 
     polyHull* pHull = lu->getPolyHull(&img,3);
@@ -112,7 +112,7 @@ img.save("/home/mprice/Desktop/Patch/Collision.png","PNG");*/
     lu->vizualizePatch(LP->at(4),&img);
     img.save("realPatch5.png","PNG");
     img.load("PatchMask.png");
-
+*/
 
 
 
@@ -140,7 +140,7 @@ img.save("/home/mprice/Desktop/Patch/Collision.png","PNG");*/
     glLightfv(GL_LIGHT0,GL_POSITION,lightpos);
 
     glMatrixMode(GL_TEXTURE);
-    glScalef(4,4,4);
+    //glScalef(4,4,4);
     glTranslatef(0.5, 0.5, 0);
     glRotatef(90.0, 0, 0, 1);
     glTranslatef(-0.5, -0.5, 0);
@@ -239,13 +239,12 @@ void MPSandbox::draw()
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glEnable(GL_LIGHT0);
     glEnable(GL_LIGHTING);
-    glEnable(GL_BLEND);
-    glDisable(GL_DEPTH_TEST);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glEnable(GL_BLEND);
+    //glDisable(GL_DEPTH_TEST);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_TEXTURE_2D);
     lu->drawFromPatches(LP, mod);
     //lu->DrawSinglePatch(LP,mod,(m_framesElapsed/20)%LP->size());
     //glTranslatef(0.5,0,0);
     //glCallList(models_->value("teapot").idx);
-
 }

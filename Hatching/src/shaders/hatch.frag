@@ -43,7 +43,12 @@ void main()
 	else
 		gl_FragColor = vec4(1.0,1.0,1.0,1.0);
 	//gl_FragColor = texture2D(alph, _origTexCoord);
+
+	if(gl_FragColor.r > 0.8){gl_FragColor=vec4(1.0,1.0,1.0,1.0);}
 	gl_FragColor.a = 1.0 - texture2D(alph, _origTexCoord).x;
+	if(gl_FragColor.a < 0.01)discard;
+
+
 
 	//gl_FragColor = texture2DProj(alph,gl_TexCoord[0]);
 

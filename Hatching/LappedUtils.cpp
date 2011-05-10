@@ -162,7 +162,7 @@ void printVector4(Vector4* v)
 
 void LappedUtils::assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v1st, vec2<float> &v2st)
 {
-    float scale = .5;
+    float scale = .25;
     Vector4 A,B,C;
     A = seed->v0->pos;
     B = seed->v1->pos;
@@ -642,6 +642,13 @@ polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
     pHull->imgw = w;
 
 
+    //segfault??????
+    delete edgesMade;
+    delete vertsMade;
+    delete vQu;
+    delete visitedE;
+
+
     return pHull;
 }
 
@@ -991,7 +998,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                         {edgesInPatch->insert(otherTri->e20);
                             edgeQ->enqueue(otherTri->e20);}
                         PTris->append(otherTri);
-
+                        /*
                         double size = 500;
                         QImage* testOut = new QImage((int)size,(int)size,QImage::Format_ARGB32);
                         testOut->fill(1);
@@ -1005,7 +1012,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                             painter.drawLine(UVs->value(pt->v1).x*size , UVs->value(pt->v1).y*size , UVs->value(pt->v2).x*size , UVs->value(pt->v2).y*size);
                             painter.drawLine(UVs->value(pt->v0).x*size,UVs->value(pt->v0).y*size,UVs->value(pt->v2).x*size,UVs->value(pt->v2).y*size);
                         }
-
+                        */
 
                     }
                 }
@@ -1050,15 +1057,23 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
 
 
         //delete temporary stupid stuff
-        /*delete &edgeQ;
-    delete &edgesInPatch;
-    delete &vertsInPatch;
-    delete &trisInPatch;*/
+        delete edgeQ;
+    delete edgesInPatch;
+    delete vertsInPatch;
+    delete trisInPatch;
 
 
         //ENDWHILE MESH NOT COVERED*
     }                       //**
     //ENDWHILE MESH NOT COvERED*
+
+
+    //stuff from beginning to delete
+    delete trisInNOPatch;
+    //should just delete redundant pointers
+    delete[] trisMade;
+    delete vertsMade;
+    delete edgesMade;
 
     return PatchList;
 }
@@ -1181,7 +1196,7 @@ int LappedUtils::circle_circle_intersection(double x0, double y0, double r0,
 
 void LappedUtils::drawFromPatches(QList<LappedPatch*>* patches, GLMmodel* mod)
 {//int cp=1;
-    glClearColor(.5,.5,.5,1.0);
+        glClearColor(1,1,1,1.0);
 for(int cp=0; cp<patches->size(); cp++)
     {
     LappedPatch* patch = patches->at(cp);
@@ -1191,6 +1206,7 @@ for(int cp=0; cp<patches->size(); cp++)
     for(int t=0; t<patch->tris->size(); t++)
         {
             PatchTri* tri = patch->tris->at(t);
+            glNormal3fv(&mod->normals[3 *tri->GLMtri->nindices[0]]);
             glTexCoord2f(UVs->value(tri->v0).x, UVs->value(tri->v0).y );
             //glVertex3f(tri->v0->pos.x, tri->v0->pos.y, tri->v0->pos.z);
 
@@ -1199,10 +1215,12 @@ for(int cp=0; cp<patches->size(); cp++)
             //Draw the GLMtriangle
             glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[0]]);
 
+            glNormal3fv(&mod->normals[3 *tri->GLMtri->nindices[1]]);
             glTexCoord2f(UVs->value(tri->v1).x, UVs->value(tri->v1).y );
             //glVertex3f(tri->v1->pos.x, tri->v1->pos.y, tri->v1->pos.z);
             glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[1]]);
 
+            glNormal3fv(&mod->normals[3 *tri->GLMtri->nindices[2]]);
             glTexCoord2f(UVs->value(tri->v2).x, UVs->value(tri->v2).y );
             //glVertex3f(tri->v2->pos.x, tri->v2->pos.y, tri->v2->pos.z);
             glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[2]]);
@@ -1214,7 +1232,7 @@ for(int cp=0; cp<patches->size(); cp++)
 void LappedUtils::DrawSinglePatch(QList<LappedPatch*>* patches, GLMmodel* mod, int patch)
 {
     int cp=patch;
-        glClearColor(.5,.5,.5,1.0);
+        glClearColor(1,1,1,1.0);
     //for(int cp=0; cp<patches->size(); cp++)
         {
         LappedPatch* patch = patches->at(cp);
