@@ -101,20 +101,20 @@ void MPSandbox::begin()
 
 
     lu->vizualizePatch(LP->at(0),&img);
-    img.save("/home/mprice/Desktop/Patch/realPatch.png","PNG");
-    img.load("/home/mprice/Desktop/Patch/PatchMask.png");
+    img.save("realPatch.png","PNG");
+    img.load("PatchMask.png");
     lu->vizualizePatch(LP->at(1),&img);
-    img.save("/home/mprice/Desktop/Patch/realPatch2.png","PNG");
-    img.load("/home/mprice/Desktop/Patch/PatchMask.png");
+    img.save("realPatch2.png","PNG");
+    img.load("PatchMask.png");
     lu->vizualizePatch(LP->at(2),&img);
-    img.save("/home/mprice/Desktop/Patch/realPatch3.png","PNG");
-    img.load("/home/mprice/Desktop/Patch/PatchMask.png");
+    img.save("realPatch3.png","PNG");
+    img.load("PatchMask.png");
     lu->vizualizePatch(LP->at(3),&img);
-    img.save("/home/mprice/Desktop/Patch/realPatch4.png","PNG");
-    img.load("/home/mprice/Desktop/Patch/PatchMask.png");
+    img.save("realPatch4.png","PNG");
+    img.load("PatchMask.png");
     lu->vizualizePatch(LP->at(4),&img);
-    img.save("/home/mprice/Desktop/Patch/realPatch5.png","PNG");
-    img.load("/home/mprice/Desktop/Patch/PatchMask.png");
+    img.save("realPatch5.png","PNG");
+    img.load("PatchMask.png");
 
 
 
@@ -226,7 +226,7 @@ void MPSandbox::draw()
     lightpos[2]=-1.f;
     lightpos[3]=0.f;
     glLightfv(GL_LIGHT0,GL_POSITION,lightpos);*/
-
+/*
     if(m_framesElapsed%100==0)
     {glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
         if(m_framesElapsed%200==0)
@@ -238,8 +238,8 @@ void MPSandbox::draw()
             glDisable(GL_DEPTH_TEST);
         }
     }
-
-    //glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+*/
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glEnable(GL_LIGHT0);
     glEnable(GL_LIGHTING);
     glEnable(GL_BLEND);
@@ -247,8 +247,8 @@ void MPSandbox::draw()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     //glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
     glEnable(GL_TEXTURE_2D);
-    //lu->drawFromPatches(LP, mod);
-    lu->DrawSinglePatch(LP,mod,(m_framesElapsed)%LP->size());
+    lu->drawFromPatches(LP, mod);
+    //lu->DrawSinglePatch(LP,mod,(m_framesElapsed/20)%LP->size());
     //glTranslatef(0.5,0,0);
     //glCallList(models_->value("teapot").idx);
 

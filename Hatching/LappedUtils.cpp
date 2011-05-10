@@ -239,6 +239,14 @@ void LappedUtils::assignSeedUV(PatchTri* seed, vec2<float> &v0st, vec2<float> &v
     v2st.y = Cp.y;
 }
 
+QColor getColorIfIntersect(vec2<float> v1, vec2<float> v2, polyHull* hull)
+{
+    if (hull->isectHullUV(v1.x,v1.y,v2.x,v2.y))
+        return Qt::red;
+    else return Qt::yellow;
+}
+
+
 polyHull* LappedUtils::getPolyHull(QImage* blob,int iterations)
 {
     QImage img = *blob;
@@ -903,13 +911,13 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                 //if homeomorphic to a disk
                 bool newvertinpatch = vertsInPatch->contains(newvert);
                 int numNewEdgesInPatch=0;
-                if(edgesInPatch->contains(otherTri->e01)){
+                if(!edgesInPatch->contains(otherTri->e01)){
                     numNewEdgesInPatch++;
                     newEdge=otherTri->e01;}
-                if(edgesInPatch->contains(otherTri->e12)){
+                if(!edgesInPatch->contains(otherTri->e12)){
                     numNewEdgesInPatch++;
                     newEdge=otherTri->e12;}
-                if(edgesInPatch->contains(otherTri->e20)){
+                if(!edgesInPatch->contains(otherTri->e20)){
                     numNewEdgesInPatch++;
                     newEdge=otherTri->e20;}
                 if( !newvertinpatch || numNewEdgesInPatch==1)
@@ -1002,6 +1010,29 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                     }
                 }
             }//endif isectHull
+            /*
+            double size = 500;
+            QImage* testOut = new QImage((int)size,(int)size,QImage::Format_ARGB32);
+            testOut->fill(1);
+            QPainter painter(testOut);
+            painter.setPen(Qt::red);
+            painter.setBrush(Qt::red);
+            for (int tri=0;tri<PTris->size();tri++)
+            {
+                PatchTri* pt = PTris->at(tri);
+                painter.setPen(getColorIfIntersect(UVs->value(pt->v0),UVs->value(pt->v1),polyhull));
+                painter.drawLine(UVs->value(pt->v0).x*size , UVs->value(pt->v0).y*size , UVs->value(pt->v1).x*size, UVs->value(pt->v1).y*size);
+                painter.setPen(getColorIfIntersect(UVs->value(pt->v1),UVs->value(pt->v2),polyhull));
+                painter.drawLine(UVs->value(pt->v1).x*size , UVs->value(pt->v1).y*size , UVs->value(pt->v2).x*size , UVs->value(pt->v2).y*size);
+                painter.setPen(getColorIfIntersect(UVs->value(pt->v0),UVs->value(pt->v2),polyhull));
+                painter.drawLine(UVs->value(pt->v0).x*size, UVs->value(pt->v0).y*size,UVs->value(pt->v2).x*size,UVs->value(pt->v2).y*size);
+                painter.setPen(Qt::blue);
+                painter.drawLine((UVs->value(pt->v0).x+UVs->value(pt->v1).x)/2*size,(UVs->value(pt->v0).y+UVs->value(pt->v1).y)/2*size,UVs->value(pt->v2).x*size,UVs->value(pt->v2).y*size);
+                painter.setPen(Qt::red);
+            }
+            int iii = 0;
+            testOut->save("TESTTHIS.png");
+            int iiiii = 0;*/
 
         }//endwhile Q!Empty
 
@@ -1032,6 +1063,15 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
     return PatchList;
 }
 
+void drawEdgeCenter(QImage* img, QPainter* patr, vec2<float> v0, vec2<float>v1, vec2<float> v2)
+{
+    int x0,y0,x1,y1;
+    x0 = (v0.x+v1.x)/2 * img->width();
+    y0 = (1.0-(v0.y+v1.y)/2) * img->height();
+    x1 = v2.x * img->width();
+    y1 = (1.0-v2.y) * img->height();
+    patr->drawLine(x0,y0,x1,y1);
+}
 void LappedUtils::vizualizePatch(LappedPatch* patch, QImage* img)
 {
     QPainter patr(img);
@@ -1044,6 +1084,9 @@ void LappedUtils::vizualizePatch(LappedPatch* patch, QImage* img)
         drawEdgeFromUV(img, &patr, UVs->value(pt->v0), UVs->value(pt->v1));
         drawEdgeFromUV(img, &patr, UVs->value(pt->v1), UVs->value(pt->v2));
         drawEdgeFromUV(img, &patr, UVs->value(pt->v2), UVs->value(pt->v0));
+        patr.setPen(Qt::blue);
+        drawEdgeCenter(img,&patr,UVs->value(pt->v0),UVs->value(pt->v1),UVs->value(pt->v2));
+        patr.setPen(Qt::green);
     }
     //draw seed in red because why not
     patr.setPen(Qt::red);
@@ -1062,6 +1105,9 @@ void LappedUtils::drawEdgeFromUV(QImage* img, QPainter* patr, vec2<float> v0, ve
     y1 = (1.0-v1.y) * img->height();
     patr->drawLine(x0,y0,x1,y1);
 }
+
+
+
 void LappedUtils::printPatchTri2d(PatchTri* pt)
 {
     cout<<"2dTri: ("<<pt->v0->s<<","<<pt->v0->t<<") ("<<pt->v1->s<<","<<pt->v1->t<<") ("<<pt->v2->s<<","<<pt->v2->t<<")"<<endl;
@@ -1134,9 +1180,9 @@ int LappedUtils::circle_circle_intersection(double x0, double y0, double r0,
 }
 
 void LappedUtils::drawFromPatches(QList<LappedPatch*>* patches, GLMmodel* mod)
-{int cp=1;
+{//int cp=1;
     glClearColor(.5,.5,.5,1.0);
-//for(int cp=0; cp<patches->size(); cp++)
+for(int cp=0; cp<patches->size(); cp++)
     {
     LappedPatch* patch = patches->at(cp);
     QHash<PatchVert*, vec2<float> >* UVs = patch->uvs;
