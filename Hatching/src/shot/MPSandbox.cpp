@@ -34,10 +34,10 @@ void MPSandbox::begin()
     img.load("/home/mprice/Desktop/Patch/PatchMask.png");
     lu = new LappedUtils();
     MeshOperator* mo = new MeshOperator();
-    mod = models_->value("torushd").model;
+    mod = models_->value("evenodder").model;
     mo->calculateCurvatures(mod);
 
-    polyHull* pHull = lu->getPolyHull(&img,3);
+    polyHull* pHull = lu->getPolyHull(&img,10);
 
     //DEBUG DRAW OUTPUT
     /*
@@ -217,12 +217,12 @@ void MPSandbox::update()
 void MPSandbox::draw()
 {
 
-    /*float lightpos[4];
+    float lightpos[4];
     lightpos[0]=1.2f;
-    lightpos[1]=-2.f * sin(m_framesElapsed/10.0);
+    lightpos[1]=-2.f * sin(m_framesElapsed/20.0);
     lightpos[2]=-1.f;
     lightpos[3]=0.f;
-    glLightfv(GL_LIGHT0,GL_POSITION,lightpos);*/
+    glLightfv(GL_LIGHT0,GL_POSITION,lightpos);
 /*
     if(m_framesElapsed%100==0)
     {glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);

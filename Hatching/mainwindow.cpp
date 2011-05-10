@@ -9,3 +9,13 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow() {
     delete ui;
 }
+
+void MainWindow::on_actionSwitch_Shot_triggered()
+{
+
+}
+
+void MainWindow::on_widget_switchShot()
+{
+
+}

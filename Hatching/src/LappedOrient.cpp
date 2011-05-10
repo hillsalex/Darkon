@@ -50,11 +50,11 @@ LappedOrient::LappedOrient()
 
 LappedOrient::~LappedOrient() {}
 
-void LappedOrient::orientTexture(LappedPatch patch) {
+void LappedOrient::orientTexture(LappedPatch* patch) {
     //insert each vertex number into a list of vertices.
     QVector<PatchVert*> verts;
-    for (int i = 0; i < patch.tris->size(); i++) {
-        PatchTri* currtri = patch.tris->at(i);
+    for (int i = 0; i < patch->tris->size(); i++) {
+        PatchTri* currtri = patch->tris->at(i);
         if (!verts.contains(currtri->v0)) verts.append(currtri->v0);
         if (!verts.contains(currtri->v1)) verts.append(currtri->v1);
         if (!verts.contains(currtri->v2)) verts.append(currtri->v2);
@@ -75,8 +75,8 @@ void LappedOrient::orientTexture(LappedPatch patch) {
     memset(f0, 0, sizeof(f0));
 
     //entering in values for H00 for all vertices.
-    for (int tri = 0; tri < patch.tris->size(); tri++) {
-        PatchTri* ctri = patch.tris->at(tri);
+    for (int tri = 0; tri < patch->tris->size(); tri++) {
+        PatchTri* ctri = patch->tris->at(tri);
 
         //idx locations in H
         int idx_ax = verts.indexOf(ctri->v0)*2;
@@ -86,9 +86,9 @@ void LappedOrient::orientTexture(LappedPatch patch) {
         int idx_cx = verts.indexOf(ctri->v2)*2;
         int idx_cy = verts.indexOf(ctri->v2)*2+1;
 
-        double2 v0pos = double2(patch.uvs->value(ctri->v0).x, patch.uvs->value(ctri->v0).y);
-        double2 v1pos = double2(patch.uvs->value(ctri->v1).x, patch.uvs->value(ctri->v1).y);
-        double2 v2pos = double2(patch.uvs->value(ctri->v2).x, patch.uvs->value(ctri->v2).y);
+        double2 v0pos = double2(patch->uvs->value(ctri->v0).x, patch->uvs->value(ctri->v0).y);
+        double2 v1pos = double2(patch->uvs->value(ctri->v1).x, patch->uvs->value(ctri->v1).y);
+        double2 v2pos = double2(patch->uvs->value(ctri->v2).x, patch->uvs->value(ctri->v2).y);
         double2 t = double2(ctri->tangent.x,  ctri->tangent.y);
         double2 s = double2(ctri->tangent.y, -ctri->tangent.x);
 
@@ -151,19 +151,19 @@ void LappedOrient::orientTexture(LappedPatch patch) {
     SparseMatrix* H01 = new SparseMatrix(verts.size()*2,2);
 
     //adding seed barycenter = 1/3(phi(A) + phi(B) + phi(C))
-    H10->addValue(0, verts.indexOf(patch.seed->v0)*2,   1.0/6.0);
-    H10->addValue(1, verts.indexOf(patch.seed->v0)*2+1, 1.0/6.0);
-    H10->addValue(0, verts.indexOf(patch.seed->v1)*2,   1.0/6.0);
-    H10->addValue(1, verts.indexOf(patch.seed->v1)*2+1, 1.0/6.0);
-    H10->addValue(0, verts.indexOf(patch.seed->v2)*2,   1.0/6.0);
-    H10->addValue(1, verts.indexOf(patch.seed->v2)*2+1, 1.0/6.0);
+    H10->addValue(0, verts.indexOf(patch->seed->v0)*2,   1.0/6.0);
+    H10->addValue(1, verts.indexOf(patch->seed->v0)*2+1, 1.0/6.0);
+    H10->addValue(0, verts.indexOf(patch->seed->v1)*2,   1.0/6.0);
+    H10->addValue(1, verts.indexOf(patch->seed->v1)*2+1, 1.0/6.0);
+    H10->addValue(0, verts.indexOf(patch->seed->v2)*2,   1.0/6.0);
+    H10->addValue(1, verts.indexOf(patch->seed->v2)*2+1, 1.0/6.0);
 
-    H01->addValue(verts.indexOf(patch.seed->v0)*2,   0, 1.0/6.0);
-    H01->addValue(verts.indexOf(patch.seed->v0)*2+1, 1, 1.0/6.0);
-    H01->addValue(verts.indexOf(patch.seed->v1)*2,   0, 1.0/6.0);
-    H01->addValue(verts.indexOf(patch.seed->v1)*2+1, 1, 1.0/6.0);
-    H01->addValue(verts.indexOf(patch.seed->v2)*2,   0, 1.0/6.0);
-    H01->addValue(verts.indexOf(patch.seed->v2)*2+1, 1, 1.0/6.0);
+    H01->addValue(verts.indexOf(patch->seed->v0)*2,   0, 1.0/6.0);
+    H01->addValue(verts.indexOf(patch->seed->v0)*2+1, 1, 1.0/6.0);
+    H01->addValue(verts.indexOf(patch->seed->v1)*2,   0, 1.0/6.0);
+    H01->addValue(verts.indexOf(patch->seed->v1)*2+1, 1, 1.0/6.0);
+    H01->addValue(verts.indexOf(patch->seed->v2)*2,   0, 1.0/6.0);
+    H01->addValue(verts.indexOf(patch->seed->v2)*2+1, 1, 1.0/6.0);
 
     //D
     SparseMatrix *D = new SparseMatrix(H01->operator +(H10->getTranspose()));
@@ -173,8 +173,8 @@ void LappedOrient::orientTexture(LappedPatch patch) {
     memset(DQ, 0, sizeof(DQ));
     double q[2];
     memset(q, 0, sizeof(q));
-    q[0] = (patch.uvs->value(patch.seed->v0).x + patch.uvs->value(patch.seed->v1).x + patch.uvs->value(patch.seed->v2).x)/3.0;
-    q[1] = (patch.uvs->value(patch.seed->v0).y + patch.uvs->value(patch.seed->v1).y + patch.uvs->value(patch.seed->v2).y)/3.0;
+    q[0] = (patch->uvs->value(patch->seed->v0).x + patch->uvs->value(patch->seed->v1).x + patch->uvs->value(patch->seed->v2).x)/3.0;
+    q[1] = (patch->uvs->value(patch->seed->v0).y + patch->uvs->value(patch->seed->v1).y + patch->uvs->value(patch->seed->v2).y)/3.0;
     D->multiply(DQ, q, 2, 1);
 
     //calculate -D*q-f0
@@ -225,12 +225,12 @@ void LappedOrient::orientTexture(LappedPatch patch) {
     //unconstrained = Hpseudo*Dqf
     rmatrixmv(verts.size()*2, verts.size()*2, Hpseudo, 0, 0, 0, Dqf, 0, unconstrained, 0);
 
-    double scale_oldx = patch.uvs->value(patch.seed->v0).x - patch.uvs->value(patch.seed->v1).x;
-    double scale_oldy = patch.uvs->value(patch.seed->v0).y - patch.uvs->value(patch.seed->v1).y;
+    double scale_oldx = patch->uvs->value(patch->seed->v0).x - patch->uvs->value(patch->seed->v1).x;
+    double scale_oldy = patch->uvs->value(patch->seed->v0).y - patch->uvs->value(patch->seed->v1).y;
     double scale_old = sqrt(scale_oldx*scale_oldx + scale_oldy*scale_oldy);
 
-    double scale_newx = unconstrained[verts.indexOf(patch.seed->v0)*2] - unconstrained[verts.indexOf(patch.seed->v1)*2];
-    double scale_newy = unconstrained[verts.indexOf(patch.seed->v0)*2+1] - unconstrained[verts.indexOf(patch.seed->v1)*2+1];
+    double scale_newx = unconstrained[verts.indexOf(patch->seed->v0)*2] - unconstrained[verts.indexOf(patch->seed->v1)*2];
+    double scale_newy = unconstrained[verts.indexOf(patch->seed->v0)*2+1] - unconstrained[verts.indexOf(patch->seed->v1)*2+1];
     double scale_new = sqrt(scale_newx*scale_newx + scale_newy*scale_newy);
 
     double scale = scale_old/scale_new;
@@ -241,20 +241,20 @@ void LappedOrient::orientTexture(LappedPatch patch) {
 //        cout << "vert " << i << " is (" << unconstrained[i*2] << ", " << unconstrained[i*2+1] << ")" << endl;
     }
 
-    for (int i = 0; i < patch.tris->size(); i++) {
-        PatchTri* currtri = patch.tris->at(i);
-        patch.uvs->remove(currtri->v0);
-        patch.uvs->remove(currtri->v1);
-        patch.uvs->remove(currtri->v2);
+    for (int i = 0; i < patch->tris->size(); i++) {
+        PatchTri* currtri = patch->tris->at(i);
+        patch->uvs->remove(currtri->v0);
+        patch->uvs->remove(currtri->v1);
+        patch->uvs->remove(currtri->v2);
         float v0x = unconstrained[verts.indexOf(currtri->v0)*2];
         float v0y = unconstrained[verts.indexOf(currtri->v0)*2+1];
         float v1x = unconstrained[verts.indexOf(currtri->v1)*2];
         float v1y = unconstrained[verts.indexOf(currtri->v1)*2+1];
         float v2x = unconstrained[verts.indexOf(currtri->v2)*2];
         float v2y = unconstrained[verts.indexOf(currtri->v2)*2+1];
-        patch.uvs->insert(currtri->v0, vec2<float>(v0x, v0y));
-        patch.uvs->insert(currtri->v1, vec2<float>(v1x, v1y));
-        patch.uvs->insert(currtri->v2, vec2<float>(v2x, v2y));
+        patch->uvs->insert(currtri->v0, vec2<float>(v0x, v0y));
+        patch->uvs->insert(currtri->v1, vec2<float>(v1x, v1y));
+        patch->uvs->insert(currtri->v2, vec2<float>(v2x, v2y));
     }
 //    QImage *new2D = new QImage(1000, 1000, QImage::Format_ARGB32);
 //    new2D->fill(0xffffffff);

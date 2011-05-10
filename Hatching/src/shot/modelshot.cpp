@@ -5,7 +5,7 @@
 using std::cout;
 using std::endl;
 
-QString modelstring = "bird";
+QString modelstring = "torushd";
 
 
 modelShot::modelShot(DrawEngine* parent,QHash<QString, QGLShaderProgram *>* shad, QHash<QString, GLuint>* tex, QHash<QString, Model>* mod) : Shot(parent,shad,tex,mod)
@@ -20,19 +20,16 @@ modelShot::~modelShot()
 
 }
 
-void modelShot::renderNormal(const Vector4 &vertex, const Vector4 &direction,bool drawTri)
+void modelShot::renderNormal(const Vector4 &vertex, const Vector4 &direction, bool ved)
 {
-    float scaleFactor = 1/100.0;
     Vector4 normalDirection = direction.getNormalized();
 
     // Draw a normal with a fixed length of 0.15
     glBegin(GL_LINES);
     glVertex3dv(vertex.data);
-    glVertex3dv((vertex + normalDirection * scaleFactor).data);
+    glVertex3dv((vertex + normalDirection * 0.05).data);
     glEnd();
 
-    if(drawTri)
-    {
     // End the normal with an axis-aligned billboarded triangle (billboarding means always rotating
     // to face the camera, and axis-aligned means it can only rotate around the axis of the normal)
     Vector4 eye;
@@ -42,16 +39,14 @@ void modelShot::renderNormal(const Vector4 &vertex, const Vector4 &direction,boo
     Vector4 triangleVector = direction.cross(eye - vertex);
     if (triangleVector.getMagnitude2() > 1.0e-6f)
     {
-        triangleVector = triangleVector.getNormalized() * scaleFactor/10;
+        triangleVector = triangleVector.getNormalized() * 0.01;
         glBegin(GL_TRIANGLES);
-        glVertex3dv((vertex + normalDirection * scaleFactor).data);
-        glVertex3dv((vertex + normalDirection * scaleFactor - triangleVector).data);
-        glVertex3dv((vertex + normalDirection * scaleFactor + triangleVector).data);
+        glVertex3dv((vertex + normalDirection * 0.1).data);
+        glVertex3dv((vertex + normalDirection * 0.05 - triangleVector).data);
+        glVertex3dv((vertex + normalDirection * 0.05 + triangleVector).data);
         glEnd();
     }
 }
-}
-
 
 
 
@@ -94,10 +89,10 @@ void modelShot::draw()
     glMatrixMode(GL_MODELVIEW);
     glActiveTexture(GL_TEXTURE0);
     QList<QString> keys = models_->keys();
-    bool drawVertCurvatures = false;
-    bool drawVertMinCurvatures = false;
-    bool drawFaceCurvatures = false;
-    bool drawTris = false;
+    bool drawVertCurvatures = true;
+    bool drawVertMinCurvatures = true;
+    bool drawFaceCurvatures = true;
+    bool drawTris = true;
     float scaleFactor = 1/20.0;
 
 

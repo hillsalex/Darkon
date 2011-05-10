@@ -2,6 +2,7 @@
 #include <QQueue>
 #include <QSet>
 #include "assert.h"
+#include "LappedOrient.h"
 
 LappedUtils::LappedUtils()
 {
@@ -244,6 +245,24 @@ QColor getColorIfIntersect(vec2<float> v1, vec2<float> v2, polyHull* hull)
     if (hull->isectHullUV(v1.x,v1.y,v2.x,v2.y))
         return Qt::red;
     else return Qt::yellow;
+}
+
+int countTriIntersectHull(vec2<float> v1, vec2<float> v2, vec2<float> v3, polyHull* hull)
+{
+    int toReturn = 0;
+    if (hull->isInteriorPtUV(v1.x,v1.y))
+    {
+        toReturn++;
+    }
+    if (hull->isInteriorPtUV(v2.x,v2.y))
+    {
+        toReturn++;
+    }
+    if (hull->isInteriorPtUV(v3.x,v3.y))
+    {
+        toReturn++;
+    }
+    return toReturn;
 }
 
 
@@ -816,7 +835,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
     while(!trisInNOPatch->empty())// && wtf<150)
     {                           //***
         //WHILE MESH IS NOT COVERED******
-        cout<<"Patch "<< wtf<<endl;
+        //cout<<"Patch "<< wtf<<endl;
         wtf++;
 
 
@@ -904,7 +923,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
             }
             else
             {
-               // cout<<"edge somehow has no triangles"<<endl;
+                // cout<<"edge somehow has no triangles"<<endl;
                 continue;
             }
 
@@ -933,7 +952,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                     {//just add the triangle/edges!
                         edgesInPatch->insert(newEdge);
                         trisInPatch->insert(otherTri);
-                        trisInNOPatch->removeAll(otherTri);
+                        //trisInNOPatch->removeAll(otherTri);
                         PTris->append(otherTri);
                         edgeQ->enqueue(newEdge);
                     }
@@ -987,7 +1006,10 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                         UVs->insert(newvert,sumUVs);
                         vertsInPatch->insert(newvert);
                         trisInPatch->insert(otherTri);
-                        trisInNOPatch->removeAll(otherTri);
+                        if (countTriIntersectHull(UVs->value(otherTri->v0),UVs->value(otherTri->v1),UVs->value(otherTri->v2),polyhull)>1)
+                        {
+                            trisInNOPatch->removeAll(otherTri);
+                        }
                         if(!edgesInPatch->contains(otherTri->e01))
                         {edgesInPatch->insert(otherTri->e01);
                             edgeQ->enqueue(otherTri->e01);}
@@ -1058,9 +1080,9 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
 
         //delete temporary stupid stuff
         delete edgeQ;
-    delete edgesInPatch;
-    delete vertsInPatch;
-    delete trisInPatch;
+        delete edgesInPatch;
+        delete vertsInPatch;
+        delete trisInPatch;
 
 
         //ENDWHILE MESH NOT COVERED*
@@ -1074,7 +1096,11 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
     delete[] trisMade;
     delete vertsMade;
     delete edgesMade;
-
+    LappedOrient lorient = LappedOrient();
+    for (int i=0;i<PatchList->size();i++)
+    {
+        //lorient.orientTexture(PatchList->at(i));
+    }
     return PatchList;
 }
 
@@ -1196,14 +1222,14 @@ int LappedUtils::circle_circle_intersection(double x0, double y0, double r0,
 
 void LappedUtils::drawFromPatches(QList<LappedPatch*>* patches, GLMmodel* mod)
 {//int cp=1;
-        glClearColor(1,1,1,1.0);
-for(int cp=0; cp<patches->size(); cp++)
+    glClearColor(1,1,1,1.0);
+    for(int cp=0; cp<patches->size(); cp++)
     {
-    LappedPatch* patch = patches->at(cp);
-    QHash<PatchVert*, vec2<float> >* UVs = patch->uvs;
+        LappedPatch* patch = patches->at(cp);
+        QHash<PatchVert*, vec2<float> >* UVs = patch->uvs;
 
-    glBegin(GL_TRIANGLES);
-    for(int t=0; t<patch->tris->size(); t++)
+        glBegin(GL_TRIANGLES);
+        for(int t=0; t<patch->tris->size(); t++)
         {
             PatchTri* tri = patch->tris->at(t);
             glNormal3fv(&mod->normals[3 *tri->GLMtri->nindices[0]]);
@@ -1225,39 +1251,39 @@ for(int cp=0; cp<patches->size(); cp++)
             //glVertex3f(tri->v2->pos.x, tri->v2->pos.y, tri->v2->pos.z);
             glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[2]]);
         }
-    glEnd();
+        glEnd();
     }
 }
 
 void LappedUtils::DrawSinglePatch(QList<LappedPatch*>* patches, GLMmodel* mod, int patch)
 {
     int cp=patch;
-        glClearColor(1,1,1,1.0);
+    glClearColor(1,1,1,1.0);
     //for(int cp=0; cp<patches->size(); cp++)
-        {
+    {
         LappedPatch* patch = patches->at(cp);
         QHash<PatchVert*, vec2<float> >* UVs = patch->uvs;
 
         glBegin(GL_TRIANGLES);
         for(int t=0; t<patch->tris->size(); t++)
-            {
-                PatchTri* tri = patch->tris->at(t);
-                glTexCoord2f(UVs->value(tri->v0).x, UVs->value(tri->v0).y );
-                //glVertex3f(tri->v0->pos.x, tri->v0->pos.y, tri->v0->pos.z);
+        {
+            PatchTri* tri = patch->tris->at(t);
+            glTexCoord2f(UVs->value(tri->v0).x, UVs->value(tri->v0).y );
+            //glVertex3f(tri->v0->pos.x, tri->v0->pos.y, tri->v0->pos.z);
 
-                //glVertex3fv(&model->vertices[3 * triangle->vindices[2]]);
+            //glVertex3fv(&model->vertices[3 * triangle->vindices[2]]);
 
-                //Draw the GLMtriangle
-                glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[0]]);
+            //Draw the GLMtriangle
+            glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[0]]);
 
-                glTexCoord2f(UVs->value(tri->v1).x, UVs->value(tri->v1).y );
-                //glVertex3f(tri->v1->pos.x, tri->v1->pos.y, tri->v1->pos.z);
-                glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[1]]);
+            glTexCoord2f(UVs->value(tri->v1).x, UVs->value(tri->v1).y );
+            //glVertex3f(tri->v1->pos.x, tri->v1->pos.y, tri->v1->pos.z);
+            glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[1]]);
 
-                glTexCoord2f(UVs->value(tri->v2).x, UVs->value(tri->v2).y );
-                //glVertex3f(tri->v2->pos.x, tri->v2->pos.y, tri->v2->pos.z);
-                glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[2]]);
-            }
-        glEnd();
+            glTexCoord2f(UVs->value(tri->v2).x, UVs->value(tri->v2).y );
+            //glVertex3f(tri->v2->pos.x, tri->v2->pos.y, tri->v2->pos.z);
+            glVertex3fv( &mod->vertices[3 *tri->GLMtri->vindices[2]]);
         }
+        glEnd();
+    }
 }

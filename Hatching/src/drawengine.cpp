@@ -185,6 +185,24 @@ void DrawEngine::load_models() {
     glmUnitize(models_["cube"].model);
     models_["cube"].idx = glmList(models_["cube"].model,GLM_SMOOTH);
 
+    models_["oddthing"].model = glmReadOBJ(  "../Hatching/src/models/oddthing.obj"  );
+    glmUnitize(models_["oddthing"].model);
+    models_["oddthing"].idx = glmList(models_["oddthing"].model,GLM_SMOOTH);
+
+    models_["betterstair"].model = glmReadOBJ(  "../Hatching/src/models/betterstair.obj"  );
+    glmUnitize(models_["betterstair"].model);
+    models_["betterstair"].idx = glmList(models_["betterstair"].model,GLM_SMOOTH);
+
+    models_["evenodder"].model = glmReadOBJ(  "../Hatching/src/models/evenodder.obj"  );
+    glmUnitize(models_["evenodder"].model);
+    models_["evenodder"].idx = glmList(models_["evenodder"].model,GLM_SMOOTH);
+
+    models_["staircase"].model = glmReadOBJ(  "../Hatching/src/models/staircase.obj"  );
+    glmUnitize(models_["staircase"].model);
+    glmFacetNormals(models_["staircase"].model);
+    glmVertexNormals(models_["staircase"].model,90);
+    models_["staircase"].idx = glmList(models_["staircase"].model,GLM_SMOOTH);
+
     models_["bird"].model = glmReadOBJ(  "../Hatching/src/models/Durbird.obj"  );
     glmUnitize(models_["bird"].model);
     glmFacetNormals(models_["bird"].model);
@@ -201,6 +219,21 @@ void DrawEngine::load_models() {
   initialization.
 **/
 
+
+QString name(int num){
+    QString zeros("0000000000");
+    QString number = QString::number(num);
+    int length = number.length();
+    int zerolength = zeros.length();
+    zeros.resize(zerolength-length);
+    QString toReturn(zeros+number);
+    return toReturn;
+}
+
+void DrawEngine::switchShot()
+{
+
+}
 
 void DrawEngine::load_shaders() {
     shader_programs_["reflect"] = new QGLShaderProgram(context_);
@@ -415,6 +448,7 @@ void DrawEngine::realloc_framebuffers(int w,int h) {
 
 **/
 void DrawEngine::draw_frame(float time,int w,int h) {
+    cout << "Called" << endl;
     fps_ = 1000.f / (time - previous_time_),previous_time_ = time;
     m_w = w;
     m_h = h;
@@ -422,6 +456,12 @@ void DrawEngine::draw_frame(float time,int w,int h) {
 
     m_shots->at(m_curShot)->update();
     m_shots->at(m_curShot)->draw();
+/*
+    QImage qi = m_widget->grabFrameBuffer(false);
+    QString num = name(frameNumber);
+    QString fileName = "screens/frame" + num + ".png";
+    qi.save(fileName);
+    frameNumber++;*/
 }
 
 void DrawEngine::orthogonal_camera()
@@ -451,6 +491,7 @@ void DrawEngine::endShot()
 
     if(m_curShot>=m_shots->size()-1)
     {
+        m_curShot=0;
     //some sort of end action...
     }
     else
@@ -647,7 +688,9 @@ GLuint DrawEngine::load_texture(QString name)
   **/
 void DrawEngine::key_press_event(QKeyEvent *event) {
     switch(event->key()) {
-
+    case(Qt::Key_F9):
+        endShot();
+        break;
     }
 }
 

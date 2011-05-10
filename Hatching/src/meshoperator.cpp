@@ -385,6 +385,9 @@ void MeshOperator::calculateCurvatures(GLMmodel* model)
         model->vertMinCurvatures[vertexIndex*3+2]=minCurvature.z;
     }
 
+    int blurryness = 3;
+    for (int blurred = 0;blurred<blurryness;blurred++)
+    {
     for (int i=0;i<keys.size();i++)
     {
 
@@ -424,7 +427,9 @@ void MeshOperator::calculateCurvatures(GLMmodel* model)
         model->vertCurvatures[i*3+1]=eprime.y;
         model->vertCurvatures[i*3+2]=eprime.z;
 
+        memcpy(model->vertMaxCurvatures,model->vertCurvatures,sizeof(float)*keys.size()*3);
     }
+}
 
 
 

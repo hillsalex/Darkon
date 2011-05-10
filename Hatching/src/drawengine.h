@@ -57,6 +57,7 @@ public:
     //getters and setters
     float fps() { return fps_; }
 
+    void switchShot();
     void perspective_camera();
     void orthogonal_camera();
     void endShot();

@@ -17,7 +17,7 @@ public:
 
     ~LappedOrient();
 
-    void orientTexture(LappedPatch patch);
+    void orientTexture(LappedPatch* patch);
     double2 baryCoord(double2 A, double2 B, double2 C, double2 T);
 
     QVector<GLMtriangle*> *m_patch;

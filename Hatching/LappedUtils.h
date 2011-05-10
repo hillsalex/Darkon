@@ -189,6 +189,11 @@ struct polyHull
     {//A segment intersects the hull if A: it intersects an edge of the hull or B: one point is inside the hull
         return(isectAnyEdge(x0,y0,x1,y1) || isInteriorPt(x0,y0));
     }
+    bool isInteriorPtUV(float x, float y)
+    {
+        return isInteriorPt(x*imgw,(1.0-y)*imgh);
+    }
+
     //basically the same as above, but first converts the UV coords into texture space coords (ints)
     bool isectHullUV(float s0, float t0, float s1, float t1)
     {   bool a,b,c;

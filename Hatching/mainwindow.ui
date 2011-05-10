@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
-    <height>480</height>
+    <width>1126</width>
+    <height>829</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,6 +26,16 @@
     </item>
    </layout>
   </widget>
+  <action name="actionSwitch_Shot">
+   <property name="text">
+    <string>Switch Shot</string>
+   </property>
+  </action>
+  <action name="actionSwitch_Rendering">
+   <property name="text">
+    <string>Switch Rendering</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -34,6 +44,9 @@
    <extends>QWidget</extends>
    <header>glwidget.h</header>
    <container>1</container>
+   <slots>
+    <signal>switchShot()</signal>
+   </slots>
   </customwidget>
  </customwidgets>
  <resources/>
