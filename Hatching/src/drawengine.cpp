@@ -45,6 +45,7 @@
 #include <SphereShot.h>
 #include <modelshot.h>
 #include <BYSandbox.h>
+#include <tamgenerationshot.h>
 //***********************************
 #define T(x) (model->triangles[(x)])
 
@@ -103,7 +104,8 @@ DrawEngine::DrawEngine(const QGLContext *context,int w,int h, GLWidget* widget) 
     //m_shots->append(  new testShot(this, &shader_programs_, &textures_, &models_));
     //m_shots->append(  new modelShot(this, &shader_programs_, &textures_, &models_));
     //m_shots->append(  new SphereShot(this, &shader_programs_, &textures_, &models_));
-    m_shots->append(  new MPSandbox(this, &shader_programs_, &textures_, &models_));
+    //m_shots->append(  new MPSandbox(this, &shader_programs_, &textures_, &models_));
+     m_shots->append(  new TamGenerationShot(this, &shader_programs_, &textures_, &models_));
 
     m_shots->at(m_curShot)->begin();
     //BYSandbox *blah = new BYSandbox(this);

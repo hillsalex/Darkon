@@ -1,4 +1,5 @@
 #include "LappedUtils.h"
+#include "LappedOrient.h"
 #include <QQueue>
 #include <QSet>
 #include "assert.h"
@@ -852,7 +853,7 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
         //seed for this specific patch!
         //PatchTri* seed = trisMade[0];//rand()%model->numtriangles];
         PatchTri* seed = trisInNOPatch->at(0);
-        trisInNOPatch->removeFirst();
+        //trisInNOPatch->removeFirst();
 
 
         vec2<float> seedUV0, seedUV1, seedUV2;
@@ -952,7 +953,8 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                     {//just add the triangle/edges!
                         edgesInPatch->insert(newEdge);
                         trisInPatch->insert(otherTri);
-                        //trisInNOPatch->removeAll(otherTri);
+                        //if(polyhull->fullyInside(otherTri, UVs))
+                            trisInNOPatch->removeAll(otherTri);
                         PTris->append(otherTri);
                         edgeQ->enqueue(newEdge);
                     }
@@ -1006,10 +1008,8 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
                         UVs->insert(newvert,sumUVs);
                         vertsInPatch->insert(newvert);
                         trisInPatch->insert(otherTri);
-                        if (countTriIntersectHull(UVs->value(otherTri->v0),UVs->value(otherTri->v1),UVs->value(otherTri->v2),polyhull)>1)
-                        {
+                        //if(polyhull->fullyInside(otherTri, UVs))
                             trisInNOPatch->removeAll(otherTri);
-                        }
                         if(!edgesInPatch->contains(otherTri->e01))
                         {edgesInPatch->insert(otherTri->e01);
                             edgeQ->enqueue(otherTri->e01);}
@@ -1096,13 +1096,17 @@ QList<LappedPatch*>* LappedUtils::generatePatches(GLMmodel* model, polyHull* pol
     delete[] trisMade;
     delete vertsMade;
     delete edgesMade;
-    LappedOrient lorient = LappedOrient();
-    for (int i=0;i<PatchList->size();i++)
+
+
+    LappedOrient LO;
+    for(int i=0; i<PatchList->size();i++)
     {
-        //lorient.orientTexture(PatchList->at(i));
+       // LO.orientTexture(PatchList->at(i));
     }
+
     return PatchList;
 }
+
 
 void drawEdgeCenter(QImage* img, QPainter* patr, vec2<float> v0, vec2<float>v1, vec2<float> v2)
 {
@@ -1263,6 +1267,7 @@ void LappedUtils::DrawSinglePatch(QList<LappedPatch*>* patches, GLMmodel* mod, i
     {
         LappedPatch* patch = patches->at(cp);
         QHash<PatchVert*, vec2<float> >* UVs = patch->uvs;
+
 
         glBegin(GL_TRIANGLES);
         for(int t=0; t<patch->tris->size(); t++)
