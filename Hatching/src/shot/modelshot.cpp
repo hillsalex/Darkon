@@ -96,7 +96,7 @@ void modelShot::draw()
     QList<QString> keys = models_->keys();
     bool drawVertCurvatures = false;
     bool drawVertMinCurvatures = false;
-    bool drawFaceCurvatures = true;
+    bool drawFaceCurvatures = false;
     bool drawTris = false;
     float scaleFactor = 1/20.0;
 

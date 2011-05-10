@@ -37,10 +37,11 @@ void MPSandbox::begin()
     mod = models_->value("sphere").model;
     mo->calculateCurvatures(mod);
 
-    polyHull* pHull = lu->getPolyHull(&img,10);
+    polyHull* pHull = lu->getPolyHull(&img,3);
 
     //DEBUG DRAW OUTPUT
-    /*QPainter patr(&img);
+    /*
+    QPainter patr(&img);
     patr.setPen(Qt::black);
     QList<vert2d*>* vLi = pHull->verts;
     for(int i=0;i<vLi->size();i++)
@@ -62,8 +63,6 @@ void MPSandbox::begin()
         assert(v->nedges==2);
         patr.drawPoint(v->x,v->y);
     }
-
-
     for(int i=0; i<50; i++)
     {
     float s0,t0,s1,t1;
@@ -80,26 +79,24 @@ void MPSandbox::begin()
     //t1 = 1.0-(108.8 / img.height());
 
 
-    cout<<"*******************************************************"<<endl;
-    cout<<"("<<s0*img.width() << "," << (1.0-t0)*img.height() <<") ---- (" << s1*img.width() <<","<< (1.0-t1)*img.height() <<")"<<endl;
+    //cout<<"*******************************************************"<<endl;
+   // cout<<"("<<s0*img.width() << "," << (1.0-t0)*img.height() <<") ---- (" << s1*img.width() <<","<< (1.0-t1)*img.height() <<")"<<endl;
     if(pHull->isectHullUV(s0,t0,s1,t1))
     {patr.setPen(Qt::red); cout<<"red"<<endl;}
     else
     {patr.setPen(Qt::green); cout<<"green"<<endl;}
-    cout<<"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<endl;
-[ -2.00909e-06 7.84084e-34 -0.898668 0 ]
-[ 0.899489 -0.898668 0.788304 0 ]
-[ 7.84084e-34 -0.898668 -0.788304 0 ]
-    patr.drawLine(img.width()*s0, (1.0-t0)*img.height(), img.width()*s1, (1.0-t1)*img.height());
-    }*/
+    //cout<<"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"<<endl;
 
+    patr.drawLine(img.width()*s0, (1.0-t0)*img.height(), img.width()*s1, (1.0-t1)*img.height());
+    }
+img.save("/home/mprice/Desktop/Patch/Collision.png","PNG");*/
 
     LP = lu->generatePatches(mod,pHull);
-    cout<<"got patches.  patches: "<<LP->size()<<endl;
-    cout<<"patch 1 tris: "<<LP->at(0)->tris->size()<<endl;
+    //cout<<"got patches.  patches: "<<LP->size()<<endl;
+    //cout<<"patch 1 tris: "<<LP->at(0)->tris->size()<<endl;
     //lu->printPatchTri2d(LP->at(0)->tris->at(0));
 
-
+    /*
     lu->vizualizePatch(LP->at(0),&img);
     img.save("/home/mprice/Desktop/Patch/realPatch.png","PNG");
     img.load("/home/mprice/Desktop/Patch/PatchMask.png");
@@ -115,16 +112,7 @@ void MPSandbox::begin()
     lu->vizualizePatch(LP->at(4),&img);
     img.save("/home/mprice/Desktop/Patch/realPatch5.png","PNG");
     img.load("/home/mprice/Desktop/Patch/PatchMask.png");
-
-
-
-
-
-
-
-
-
-
+    */
 
     TAMGenerator tgen;
     int TAMtones = 6;
@@ -227,6 +215,7 @@ void MPSandbox::draw()
     lightpos[3]=0.f;
     glLightfv(GL_LIGHT0,GL_POSITION,lightpos);*/
 
+    /*
     if(m_framesElapsed%100==0)
     {glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
         if(m_framesElapsed%200==0)
@@ -237,18 +226,17 @@ void MPSandbox::draw()
         {
             glDisable(GL_DEPTH_TEST);
         }
-    }
+    }*/
 
     //glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glEnable(GL_LIGHT0);
     glEnable(GL_LIGHTING);
     glEnable(GL_BLEND);
-    //glDisable(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    //glBlendFunc(GL_ONE_MINUS_DST_ALPHA,GL_DST_ALPHA);
     glEnable(GL_TEXTURE_2D);
     //lu->drawFromPatches(LP, mod);
-    lu->DrawSinglePatch(LP,mod,(m_framesElapsed)%LP->size());
+   // lu->DrawSinglePatch(LP,mod,(m_framesElapsed)%LP->size());
     //glTranslatef(0.5,0,0);
     //glCallList(models_->value("teapot").idx);
 
