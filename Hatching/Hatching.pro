@@ -36,7 +36,8 @@ src/SparseMatrix.inl\
     src/alglib/alglibmisc.cpp \
     src/alglib/alglibinternal.cpp \
     src/shot/modelshot.cpp \
-    src/shot/BYSandbox.cpp
+    src/shot/BYSandbox.cpp \
+    src/LappedOrient.cpp
 
 
 
@@ -70,7 +71,8 @@ src/matrix.h\
     src/alglib/alglibmisc.h \
     src/alglib/alglibinternal.h \
     src/shot/modelshot.h \
-    src/shot/BYSandbox.h
+    src/shot/BYSandbox.h \
+    src/LappedOrient.h
 
 FORMS += mainwindow.ui
 INCLUDEPATH += src src/shot src/lib src/glm \
