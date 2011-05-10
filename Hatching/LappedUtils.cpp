@@ -1238,6 +1238,7 @@ void LappedUtils::DrawSinglePatch(QList<LappedPatch*>* patches, GLMmodel* mod, i
         LappedPatch* patch = patches->at(cp);
         QHash<PatchVert*, vec2<float> >* UVs = patch->uvs;
 
+
         glBegin(GL_TRIANGLES);
         for(int t=0; t<patch->tris->size(); t++)
             {
